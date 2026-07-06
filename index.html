@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteio de Afinidades - Cloud Pro v9</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; padding: 20px; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; min-height: 100vh; 
+            box-sizing: border-box; position: relative;
+            background: radial-gradient(circle at center, #130624 0%, #05010a 100%);
+            color: #e2d7f3; overflow-x: hidden;
+        }
+        body::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 0);
+            background-size: 30px 30px; z-index: -2; pointer-events: none;
+        }
+        #canvas-particulas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
+        
+        #ranking {
+            position: absolute; top: 20px; right: 20px; border: 1px solid #4a2d7a; padding: 12px;
+            background-color: rgba(15, 6, 32, 0.9); width: 260px; font-size: 13px; max-height: 220px;
+            overflow-y: auto; border-radius: 8px; box-shadow: 0 0 15px rgba(138, 43, 226, 0.2); z-index: 5;
+        }
+        #ranking h3 { margin-top: 0; margin-bottom: 8px; font-size: 14px; text-align: center; color: #d4af37; text-transform: uppercase; letter-spacing: 1px; }
+        #ranking ol { margin: 0; padding-left: 20px; color: #bcaad6; }
+
+        #taxas-drop {
+            position: absolute; bottom: 20px; right: 20px; border: 1px solid #3c1e69; padding: 12px;
+            background-color: rgba(15, 6, 32, 0.9); width: 240px; font-size: 12px; border-radius: 8px;
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.2); z-index: 5;
+        }
+        #taxas-drop h3 { margin-top: 0; margin-bottom: 6px; font-size: 13px; text-align: center; color: #a982ed; text-transform: uppercase; }
+        .taxa-linha { display: flex; justify-content: space-between; margin-bottom: 4px; color: #bcaad6; }
+        .taxa-linha strong { color: #fff; }
+
+        #historico-pessoal {
+            position: absolute; bottom: 20px; left: 20px; border: 1px solid #4a2d7a; padding: 12px;
+            background-color: rgba(15, 6, 32, 0.9); width: 280px; font-size: 12px; max-height: 220px;
+            overflow-y: auto; border-radius: 8px; box-shadow: 0 0 15px rgba(138, 43, 226, 0.2); z-index: 5;
+        }
+        #historico-pessoal h3 { margin-top: 0; margin-bottom: 8px; font-size: 13px; text-align: center; color: #a982ed; }
+        #historico-pessoal ul { margin: 0; padding-left: 15px; color: #bcaad6; list-style-type: square; }
+
+        #btn-adm-painel { position: absolute; top: 20px; left: 20px; z-index: 10; }
+
+        .container {
+            text-align: center; max-width: 550px; width: 100%; background: rgba(23, 11, 46, 0.8);
+            padding: 30px; border-radius: 12px; border: 1px solid #3c1e69; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(6px); z-index: 2;
+        }
+        h2 { color: #f0e6ff; filter: drop-shadow(0 0 6px rgba(169, 130, 237, 0.5)); margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: bold; color: #c4b4de; font-size: 14px; }
+        input { 
+            padding: 10px; width: 80%; max-width: 250px; font-size: 14px; text-align: center; 
+            background: #0d061a; border: 1px solid #563393; color: #fff; border-radius: 6px; 
+        }
+        input:focus { outline: none; border-color: #9966cc; box-shadow: 0 0 8px rgba(153, 102, 204, 0.5); }
+
+        button { 
+            padding: 12px 24px; font-size: 15px; cursor: pointer; margin: 8px 4px; 
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: white; 
+            border: none; border-radius: 6px; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(106, 17, 203, 0.4); transition: all 0.2s ease;
+        }
+        button:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(106, 17, 203, 0.6); }
+        button:disabled { background: #444 !important; box-shadow: none !important; cursor: not-allowed; transform: none !important; color: #aaa; }
+        
+        #btn-sortear-10 { background: linear-gradient(135deg, #d4af37 0%, #aa7c11 100%); box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); }
+        #btn-sortear-10:hover { box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5); }
+
+        #roletas-wrapper { margin: 25px 0; max-height: 290px; overflow-y: auto; padding-right: 4px; display: none; }
+        .roleta-container {
+            margin-bottom: 12px; border: 2px solid #a982ed; background: #06020c; height: 52px;
+            overflow: hidden; position: relative; border-radius: 8px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.9), 0 0 10px rgba(169, 130, 237, 0.1);
+        }
+        .roleta-trilho { display: flex; align-items: center; position: absolute; left: 0; top: 0; height: 100%; white-space: nowrap; }
+        .roleta-item {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 130px; font-size: 16px; font-weight: bold; color: #fff; height: 100%;
+            border-right: 1px solid rgba(255,255,255,0.05); box-sizing: border-box;
+        }
+        .roleta-container::before { content: "▼"; position: absolute; top: -3px; left: 50%; transform: translateX(-50%); color: #d4af37; font-size: 11px; z-index: 5; }
+        .roleta-container::after { content: "▲"; position: absolute; bottom: -3px; left: 50%; transform: translateX(-50%); color: #d4af37; font-size: 11px; z-index: 5; }
+
+        #resultado { 
+            margin-top: 25px; padding: 18px; border: 1px solid #563393; display: none; 
+            background-color: rgba(22, 10, 48, 0.95); text-align: left; border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-height: 350px; overflow-y: auto;
+        }
+        #resultado h3 { margin-top: 0; text-align: center; color: #c4b4de; border-bottom: 1px solid #3c1e69; padding-bottom: 8px; }
+        .item-resultado-bloco { padding: 10px 0; border-bottom: 1px solid rgba(86, 51, 147, 0.4); }
+        .item-resultado-bloco:last-child { border-bottom: none; }
+
+        .hidden { display: none !important; }
+        #contador-tentativas { margin-top: 10px; font-size: 14px; color: #a982ed; font-weight: 500; }
+
+        /* MODAL ADMINISTRATIVO AVANÇADO */
+        #modal-adm {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #110822; border: 2px solid #6a11cb; padding: 22px;
+            width: 85%; max-width: 650px; max-height: 80vh; overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8); z-index: 1000; color: #e2d7f3; border-radius: 10px;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3c1e69; padding-bottom: 12px; }
+        .modal-header h2 { margin: 0; font-size: 18px; color: #f0e6ff; }
+        
+        .aba-btn {
+            padding: 8px 16px; font-size: 13px; background: #22143b; border: 1px solid #563393;
+            color: #c4b4de; cursor: pointer; font-weight: bold; border-radius: 4px; transition: all 0.2s;
+            margin-right: 5px;
+        }
+        .aba-btn:hover { background: #3c1e69; }
+        .aba-btn.active { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: white; border: none; }
+
+        .user-row { border-bottom: 1px solid #25143f; padding: 15px 0; }
+        .user-row:last-child { border-bottom: none; }
+        .roll-item { font-size: 12px; margin-left: 10px; color: #bcaad6; margin-top: 4px; }
+        .adm-actions { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .adm-actions button { padding: 5px 12px; font-size: 12px; margin: 0; box-shadow: none; }
+        .adm-input-container { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; margin-left: auto; }
+        .adm-input-container input { width: 60px; padding: 4px; font-size: 12px; background: #0d061a; border: 1px solid #563393; color: white; border-radius: 4px; text-align: center; }
+        
+        .aba-adm-conteudo h3 { color: #d4af37; font-size: 15px; text-transform: uppercase; margin-bottom: 12px; margin-top: 20px;}
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas-particulas"></canvas>
+
+    <button id="btn-adm-painel" class="hidden" onclick="abrirPainelAdm()" style="background: #d9534f; color: white; border: none; padding: 8px 14px; font-size: 13px; font-weight: bold; border-radius: 4px;">⚙️ Painel ADM</button>
+
+    <div id="ranking">
+        <h3>🏆 Sorteios Lendários</h3>
+        <ol id="lista-ranking"><li>Carregando...</li></ol>
+    </div>
+
+    <div id="taxas-drop">
+        <h3>📊 Taxas de afinidade</h3>
+        <div class="taxa-linha"><span>🌍 Elementais:</span> <strong id="lbl-taxa-elemental">--%</strong></div>
+        <div class="taxa-linha"><span>⚡ Sub-Elementais:</span> <strong id="lbl-taxa-sub">--%</strong></div>
+        <div class="taxa-linha"><span>👻 Espirituais:</span> <strong id="lbl-taxa-espiritual">--%</strong></div>
+        <div class="taxa-linha"><span>😇 Celestiais:</span> <strong id="lbl-taxa-celestial">--%</strong></div>
+        <div class="taxa-linha"><span>🌌 Cósmicas:</span> <strong id="lbl-taxa-cosmica">--%</strong></div>
+    </div>
+
+    <div id="historico-pessoal" class="hidden">
+        <h3>📜 Suas Rolagens</h3>
+        <ul id="lista-historico-pessoal"></ul>
+    </div>
+
+    <div class="container">
+        <h2>Sorteador de Afinidades</h2>
+
+        <div id="tela-login">
+            <div class="form-group">
+                <label for="nome-personagem">Nome do Personagem:</label>
+                <input type="text" id="nome-personagem" placeholder="Digite o nome">
+            </div>
+            <div class="form-group">
+                <label for="senha-personagem">Senha:</label>
+                <input type="password" id="senha-personagem" placeholder="Digite a senha">
+            </div>
+            <button onclick="tocarClique(); entrarNoSistema()">Acessar Sorteador</button>
+        </div>
+
+        <div id="tela-sorteio" class="hidden">
+            <p>Bem-vindo, <strong id="usuario-atual" style="color:#fff;"></strong>!</p>
+            
+            <div id="bloco-sorteio-comum">
+                <button id="btn-principal-sortear" onclick="tocarClique(); iniciarGiroRoleta(1)">Sortear 1x</button>
+                <button id="btn-sortear-10" class="hidden" onclick="tocarClique(); iniciarGiroRoleta(10)">💥 Sortear 10x de Vez</button>
+                <div id="contador-tentativas"></div>
+            </div>
+
+            <div id="roletas-wrapper"></div>
+
+            <div id="resultado">
+                <h3 id="titulo-resultado">Resultado do Sorteio</h3>
+                <div id="conteudo-resultados-lista"></div>
+            </div>
+            <br>
+            <button onclick="tocarClique(); deslogar()" style="font-size: 12px; padding: 6px 12px; background: #22143b; border: 1px solid #4a2d7a; color:#c4b4de; box-shadow: none;">Trocar de Personagem</button>
+        </div>
+    </div>
+
+    <div id="modal-adm" class="hidden">
+        <div class="modal-header">
+            <h2>Painel Avançado de Administrador</h2>
+            <button onclick="tocarClique(); fecharPainelAdm()" style="margin: 0; padding: 5px 12px; font-size: 12px; background:#22143b; border:1px solid #4a2d7a;">Fechar</button>
+        </div>
+        
+        <div style="margin-top: 12px; display: flex; border-bottom: 1px solid #3c1e69; padding-bottom: 12px;">
+            <button id="btn-aba-jogadores" class="aba-btn active" onclick="mudarAbaAdm('jogadores')">👥 Jogadores</button>
+            <button id="btn-aba-sistema" class="aba-btn" onclick="mudarAbaAdm('sistema')">⚙️ Customizar Jogo</button>
+        </div>
+
+        <div id="conteudo-adm-jogadores" class="aba-adm-conteudo" style="margin-top: 15px;"></div>
+
+        <div id="conteudo-adm-sistema" class="aba-adm-conteudo hidden" style="margin-top: 15px;">
+            <h3>📊 Alterar Taxas de Drop (A soma deve dar 100%)</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 450px; margin-bottom: 15px;">
+                <div><label>Elementais (%):</label> <input type="number" id="edit-taxa-Elementais" step="0.1" style="width:110px;"></div>
+                <div><label>Sub-Elementais (%):</label> <input type="number" id="edit-taxa-Sub-Elementais" step="0.1" style="width:110px;"></div>
+                <div><label>Espirituais (%):</label> <input type="number" id="edit-taxa-Espirituais" step="0.1" style="width:110px;"></div>
+                <div><label>Celestiais (%):</label> <input type="number" id="edit-taxa-Celestiais" step="0.1" style="width:110px;"></div>
+                <div><label>Cósmicas (%):</label> <input type="number" id="edit-taxa-Cósmicas" step="0.1" style="width:110px;"></div>
+            </div>
+            <button onclick="tocarClique(); salvarTaxasNuvem()" style="background: #5cb85c; font-size:13px; padding:8px 16px;">💾 Salvar Novas Taxas</button>
+
+            <hr style="border: 0; border-top: 1px solid #3c1e69; margin: 25px 0;">
+
+            <h3>✨ Adicionar Nova Afinidade</h3>
+            <div style="display:flex; flex-direction:column; gap: 12px; max-width: 450px;">
+                <div>
+                    <label>Categoria:</label>
+                    <select id="add-el-categoria" style="padding:10px; background:#0d061a; color:white; border:1px solid #563393; border-radius:6px; width:100%; box-sizing:border-box;">
+                        <option value="Elementais">Elementais</option>
+                        <option value="Sub-Elementais">Sub-Elementais</option>
+                        <option value="Espirituais">Espirituais</option>
+                        <option value="Celestiais">Celestiais</option>
+                        <option value="Cósmicas">Cósmicas</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Nome (com Emoji):</label>
+                    <input type="text" id="add-el-nome" placeholder="Ex: 🌊 Água" style="width:100%; max-width:none; text-align:left; box-sizing:border-box;">
+                </div>
+                <div>
+                    <label>Bônus:</label>
+                    <input type="text" id="add-el-bonus" placeholder="Ex: +1 Resistência" style="width:100%; max-width:none; text-align:left; box-sizing:border-box;">
+                </div>
+                <div>
+                    <label>Passiva:</label>
+                    <input type="text" id="add-el-passiva" placeholder="Descrição da passiva..." style="width:100%; max-width:none; text-align:left; box-sizing:border-box;">
+                </div>
+                <button onclick="tocarClique(); adicionarElementoNuvem()" style="background: #6a11cb; font-size:13px; padding:10px 20px; margin-top:5px; align-self: flex-start;">➕ Adicionar ao Jogo</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 🚨 CONFIGURAÇÃO DO SEU FIREBASE AQUI! 🚨
+        // ==========================================
+        const firebaseConfig = {
+           apiKey: "AIzaSyAyCR1Hod1kFemfLkXlPme88ihbRFlXhaM",
+            authDomain: "sorteioafinidade.firebaseapp.com",
+            projectId: "sorteioafinidade",
+            storageBucket: "sorteioafinidade.firebasestorage.app",
+            messagingSenderId: "338718810770",
+            appId: "1:338718810770:web:7c0cc44fbf70df30b27c4b"
+        };
+        
+        // Inicializa o Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Variáveis Globais de Dados (Alimentadas pela nuvem)
+        let afinidades = {};
+        let taxas = {};
+        const todosElementosLista = [];
+        let usuarioLogado = "";
+        let ehAdmin = false;
+
+        // Auto-inicialização de Dados de Segurança na primeira execução
+        async function inicializarEstruturaNuvem() {
+            // 1. Cria o Admin "L" padrão de forma oculta no Banco se não existir
+            const adminRef = db.collection("usuarios").doc("l");
+            const docAdmin = await adminRef.get();
+            if (!docAdmin.exists) {
+                await adminRef.set({
+                    exibicao: "L",
+                    senha: "L1", // Altere a sua senha aqui se desejar antes do primeiro load!
+                    isAdmin: true,
+                    rolagens: 0,
+                    historico: []
+                });
+            }
+
+            // 2. Escuta as Configurações Globais (Taxas e Elementos) em tempo real
+            db.collection("config").doc("sistema").onSnapshot((doc) => {
+                if (!doc.exists) {
+                    // Estrutura padrão inicial caso o banco de dados esteja totalmente zerado
+                    const padraoConfig = {
+                        taxas: { "Elementais": 65.0, "Sub-Elementais": 26.0, "Espirituais": 6.0, "Celestiais": 2.5, "Cósmicas": 0.5 },
+                        afinidades: {
+                            "Elementais": [
+                                { nome: "🔥 Fogo", bonus: "+2 Poder", passiva: "Espírito Ardente: Todo dano de Fogo é aplicado em ×2." },
+                                { nome: "🌊 Água", bonus: "+1 Resistência e +1 Poder", passiva: "Fluxo Contínuo: Toda recuperação de PP é aplicada em ×2." },
+                                { nome: "🪨 Terra", bonus: "+2 Resistência", passiva: "Corpo de Pedra: Toda redução de dano é aplicada em ×2." },
+                                { nome: "🌪️ Ar", bonus: "+2 Velocidade", passiva: "Vento Favorável: Todos os bônus em Esquiva são aplicados em ×2." }
+                            ],
+                            "Sub-Elementais": [
+                                { nome: "⚡ Relâmpago", bonus: "+1 Velocidade e +1 Habilidade", passiva: "Reflexos Elétricos: Todos os bônus em Iniciativa são aplicados em ×2." },
+                                { nome: "❄️ Gelo", bonus: "+1 Resistência e +1 Habilidade", passiva: "Frieza Absoluta: Todos os bônus para resistir a controle são aplicados em ×2." }
+                            ],
+                            "Espirituais": [
+                                { nome: "👻 Espírito", bonus: "+2 Poder", passiva: "Percepção Espiritual: Bônus para detectar presenças sobrenaturais são em ×2." }
+                            ],
+                            "Celestiais": [
+                                { nome: "😇 Celestial", bonus: "+1 Poder e +1 Resistência", passiva: "Bênção Divina: Todos os bônus para resistir a efeitos negativos são em ×2." }
+                            ],
+                            "Cósmicas": [
+                                { nome: "🌌 Éter", bonus: "+2 Poder", passiva: "Energia Universal: Todo aumento máximo de PP recebido é aplicado em ×2." }
+                            ]
+                        }
+                    };
+                    db.collection("config").doc("sistema").set(padraoConfig);
+                } else {
+                    const dados = doc.data();
+                    afinidades = dados.afinidades;
+                    taxas = dados.taxas;
+
+                    // Remapeia a lista global usada nos giros visuais
+                    todosElementosLista.length = 0;
+                    Object.keys(afinidades).forEach(cat => { 
+                        afinidades[cat].forEach(el => todosElementosLista.push({ ...el, categoria: cat })); 
+                    });
+
+                    // Atualiza os indicadores da tela principal dinamicamente
+                    document.getElementById("lbl-taxa-elemental").innerText = (taxas["Elementais"] || 0).toFixed(1) + "%";
+                    document.getElementById("lbl-taxa-sub").innerText = (taxas["Sub-Elementais"] || 0).toFixed(1) + "%";
+                    document.getElementById("lbl-taxa-espiritual").innerText = (taxas["Espirituais"] || 0).toFixed(1) + "%";
+                    document.getElementById("lbl-taxa-celestial").innerText = (taxas["Celestiais"] || 0).toFixed(1) + "%";
+                    document.getElementById("lbl-taxa-cosmica").innerText = (taxas["Cósmicas"] || 0).toFixed(1) + "%";
+
+                    // Se o painel adm estiver ativo na aba sistema, atualiza os campos numéricos
+                    if (ehAdmin && !document.getElementById("conteudo-adm-sistema").classList.contains("hidden")) {
+                        renderizarPainelSistema();
+                    }
+                }
+            });
+        }
+        inicializarEstruturaNuvem();
+
+        // Configuração de Áudio
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function somClique() {
+            try {
+                let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain(); osc.type = 'sine';
+                osc.frequency.setValueAtTime(550, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+            } catch(e) {}
+        }
+        function somTickRoleta() {
+            try {
+                let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain(); osc.type = 'triangle';
+                osc.frequency.setValueAtTime(320, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.03);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.03);
+            } catch(e) {}
+        }
+        function somHypeRaro() {
+            try {
+                let tempoOriginal = audioCtx.currentTime;
+                for (let i = 0; i < 16; i++) {
+                    let timeOffset = i * 0.26; let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain(); osc.type = 'sawtooth';
+                    let freqBase = 190 + (i * 48); osc.frequency.setValueAtTime(freqBase, tempoOriginal + timeOffset);
+                    osc.frequency.linearRampToValueAtTime(freqBase + 90, tempoOriginal + timeOffset + 0.18);
+                    let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.setValueAtTime(1300, tempoOriginal + timeOffset);
+                    gain.gain.setValueAtTime(0.06, tempoOriginal + timeOffset); gain.gain.exponentialRampToValueAtTime(0.005, tempoOriginal + timeOffset + 0.2);
+                    osc.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); osc.start(tempoOriginal + timeOffset); osc.stop(tempoOriginal + timeOffset + 0.2);
+                }
+            } catch(e) {}
+        }
+        function somSucessoLendario() {
+            try {
+                let now = audioCtx.currentTime; let notas = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98]; 
+                notas.forEach((freq, idx) => {
+                    let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain(); osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + (idx * 0.07)); gain.gain.setValueAtTime(0.12, now + (idx * 0.07));
+                    gain.gain.exponentialRampToValueAtTime(0.005, now + (idx * 0.07) + 0.5);
+                    osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now + (idx * 0.07)); osc.stop(now + (idx * 0.07) + 0.5);
+                });
+                let oscBase = audioCtx.createOscillator(); let gainBase = audioCtx.createGain(); oscBase.type = 'triangle';
+                oscBase.frequency.setValueAtTime(130.81, now); gainBase.gain.setValueAtTime(0.2, now); gainBase.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+                oscBase.connect(gainBase); gainBase.connect(audioCtx.destination); oscBase.start(now); oscBase.stop(now + 1.2);
+            } catch(e) {}
+        }
+        function tocarClique() { audioCtx.resume(); somClique(); }
+
+        // Escuta atualizações do Ranking Global
+        db.collection("ranking").orderBy("data_timestamp", "desc").limit(7).onSnapshot(snapshot => {
+            const listaHtml = document.getElementById("lista-ranking");
+            if (snapshot.empty) { listaHtml.innerHTML = "<li>Nenhum sorteio ainda</li>"; return; }
+            let html = "";
+            snapshot.forEach(doc => {
+                const item = doc.data();
+                let cor = "#fff";
+                if (item.categoria === "Cósmicas") cor = "#da70d6";
+                if (item.categoria === "Celestiais") cor = "#ffa500";
+                if (item.categoria === "Espirituais") cor = "#00ffff";
+                html += `<li><strong>${item.nome}</strong>: <span style="color: ${cor}; font-weight:bold;">${item.afinidade}</span></li>`;
+            });
+            listaHtml.innerHTML = html;
+        });
+
+        // Efeito de Partículas
+        const canvas = document.getElementById("canvas-particulas"); const ctx = canvas.getContext("2d"); let particulas = [];
+        function redimensionarCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener("resize", redimensionarCanvas); redimensionarCanvas();
+
+        class Particula {
+            constructor(x, y, cor) {
+                this.x = x; this.y = y; this.tamanho = Math.random() * 4 + 2;
+                this.velocidadeX = (Math.random() - 0.5) * 7; this.velocidadeY = (Math.random() - 0.5) * 7 - 2;
+                this.cor = cor; this.vida = 1.0; this.decaimento = Math.random() * 0.012 + 0.008;
+            }
+            atualizar() { this.x += this.velocidadeX; this.y += this.velocidadeY; this.vida -= this.decaimento; }
+            desenhar() {
+                ctx.save(); ctx.globalAlpha = this.vida; ctx.shadowBlur = 10; ctx.shadowColor = this.cor;
+                ctx.fillStyle = this.cor; ctx.beginPath(); ctx.arc(this.x, this.y, this.tamanho, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+            }
+        }
+        function estourarParticulas(cor) {
+            const centerX = window.innerWidth / 2; const centerY = window.innerHeight / 2;
+            for (let i = 0; i < 70; i++) { particulas.push(new Particula(centerX, centerY, cor)); }
+        }
+        function animarParticulas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); particulas = particulas.filter(p => p.vida > 0);
+            particulas.forEach(p => { p.atualizar(); p.desenhar(); }); requestAnimationFrame(animarParticulas);
+        }
+        animarParticulas();
+
+        // Autenticação e Login Seguro via Nuvem
+        async function entrarNoSistema() {
+            const nomeInput = document.getElementById("nome-personagem").value.trim();
+            const nome = nomeInput.toLowerCase();
+            const senha = document.getElementById("senha-personagem").value.trim();
+
+            if (!nome || !senha) { alert("Por favor, preencha o nome e a senha."); return; }
+
+            try {
+                const userRef = db.collection("usuarios").doc(nome);
+                const doc = await userRef.get();
+
+                if (!doc.exists) {
+                    // Impede a criação automática de contas com privilégios de Admin
+                    const novoUsuario = { exibicao: nomeInput, senha: senha, rolagens: 3, historico: [], isAdmin: false };
+                    await userRef.set(novoUsuario);
+                    usuarioLogado = nome;
+                    ehAdmin = false;
+                } else {
+                    const dados = doc.data();
+                    if (dados.senha !== senha) { alert("Senha incorreta para este personagem!"); return; }
+                    usuarioLogado = nome;
+                    ehAdmin = dados.isAdmin === true;
+                }
+
+                // Configuração visual baseada na flag de Admin do Banco de Dados
+               if (ehAdmin) {
+                    document.getElementById("usuario-atual").innerText = `Administrador (${nomeInput})`;
+                    document.getElementById("btn-adm-painel").classList.remove("hidden");
+                    document.getElementById("bloco-sorteio-comum").classList.add("hidden");
+                    document.getElementById("roletas-wrapper").style.display = "none";
+                    document.getElementById("historico-pessoal").classList.add("hidden");
+                } else {
+                    document.getElementById("btn-adm-painel").classList.add("hidden");
+                    document.getElementById("bloco-sorteio-comum").classList.remove("hidden");
+                    document.getElementById("historico-pessoal").classList.remove("hidden");
+                    atualizarContadorEVisual();
+                    atualizarHistoricoPessoal();
+                }
+
+                document.getElementById("tela-login").classList.add("hidden");
+                document.getElementById("tela-sorteio").classList.remove("hidden");
+            } catch (e) {
+                alert("Erro ao conectar com o servidor.");
+                console.error(e);
+            }
+        }
+
+        function deslogar() {
+            usuarioLogado = "";
+            ehAdmin = false;
+            document.getElementById("nome-personagem").value = ""; document.getElementById("senha-personagem").value = "";
+            document.getElementById("resultado").style.display = "none"; document.getElementById("roletas-wrapper").style.display = "none";
+            document.getElementById("tela-sorteio").classList.add("hidden"); document.getElementById("tela-login").classList.remove("hidden");
+            document.getElementById("btn-adm-painel").classList.add("hidden"); document.getElementById("historico-pessoal").classList.add("hidden");
+            fecharPainelAdm();
+        }
+
+        async function atualizarContadorEVisual() {
+            if (ehAdmin) return;
+            const doc = await db.collection("usuarios").doc(usuarioLogado).get();
+            if(!doc.exists) return;
+            const dadosUser = doc.data();
+            
+            document.getElementById("contador-tentativas").innerText = `Seu saldo de rolagens: ${dadosUser.rolagens}`;
+            if (dadosUser.rolagens >= 10) { document.getElementById("btn-sortear-10").classList.remove("hidden"); } 
+            else { document.getElementById("btn-sortear-10").classList.add("hidden"); }
+        }
+
+        function formatarData() {
+            const d = new Date(); const pad = (n) => n.toString().padStart(2, '0');
+            return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+
+        // Sistema do Sorteio (Mecânica Totalmente Dinâmica baseado nas Taxas da Nuvem)
+        async function iniciarGiroRoleta(qtd) {
+            if (ehAdmin) return;
+            audioCtx.resume();
+
+            const userRef = db.collection("usuarios").doc(usuarioLogado);
+            const docUser = await userRef.get();
+            const dadosUser = docUser.data();
+
+            if (dadosUser.rolagens < qtd) { alert(`Você não possui saldo suficiente para rolar ${qtd}x!`); return; }
+
+            document.getElementById("btn-principal-sortear").disabled = true;
+            document.getElementById("btn-sortear-10").disabled = true;
+            document.getElementById("resultado").style.display = "none";
+
+            const wrapperRoletas = document.getElementById("roletas-wrapper");
+            wrapperRoletas.innerHTML = ""; wrapperRoletas.style.display = "block";
+
+            let resultadosFinais = []; let flagHypeTocado = false;
+
+            for (let r = 0; r < qtd; r++) {
+                const rand = Math.random() * 100; 
+                let categoriaEscolhida = "Elementais";
+                let acumulado = 0;
+                
+                // Distribuição de faixas baseada nas porcentagens reais salvas na nuvem
+                const ordemCategorias = ["Elementais", "Sub-Elementais", "Espirituais", "Celestiais", "Cósmicas"];
+                for (let cat of ordemCategorias) {
+                    acumulado += parseFloat(taxas[cat] || 0);
+                    if (rand < acumulado) {
+                        categoriaEscolhida = cat;
+                        break;
+                    }
+                }
+
+                const lista = afinidades[categoriaEscolhida] || afinidades["Elementais"];
+                const itemFinal = lista[Math.floor(Math.random() * lista.length)];
+                const isRaro = ["Espirituais", "Celestiais", "Cósmicas"].includes(categoriaEscolhida);
+                
+                if (isRaro && !flagHypeTocado) { somHypeRaro(); flagHypeTocado = true; }
+                resultadosFinais.push({ item: itemFinal, categoria: categoriaEscolhida, raro: isRaro });
+            }
+
+            const totalItensRoleta = 35; const itemWidth = 130;
+            const destinoX = -((28 * itemWidth) + (itemWidth / 2) - 265); 
+
+            for (let r = 0; r < qtd; r++) {
+                let divContainer = document.createElement("div"); divContainer.className = "roleta-container";
+                let divTrilho = document.createElement("div"); divTrilho.className = "roleta-trilho"; divTrilho.id = `trilho-${r}`;
+
+                for (let i = 0; i < totalItensRoleta; i++) {
+                    let el = (i === 28) ? resultadosFinais[r].item : todosElementosLista[Math.floor(Math.random() * todosElementosLista.length)];
+                    let divItem = document.createElement("div"); divItem.className = "roleta-item"; divItem.innerText = el.nome;
+
+                    if (el.categoria === "Cósmicas") divItem.style.filter = "drop-shadow(0 0 4px #da70d6)";
+                    if (el.categoria === "Celestiais") divItem.style.filter = "drop-shadow(0 0 4px #ffa500)";
+                    if (el.categoria === "Espirituais") divItem.style.filter = "drop-shadow(0 0 4px #00ffff)";
+
+                    divTrilho.appendChild(divItem);
+                }
+                divContainer.appendChild(divTrilho); wrapperRoletas.appendChild(divContainer);
+            }
+
+            let somGiroInterval = setInterval(() => { somTickRoleta(); }, 110);
+
+            setTimeout(() => {
+                for (let r = 0; r < qtd; r++) {
+                    let trilho = document.getElementById(`trilho-${r}`);
+                    if (trilho) {
+                        trilho.style.transition = "transform 4.5s cubic-bezier(0.15, 0.75, 0.25, 1)";
+                        trilho.style.transform = `translateX(${destinoX}px)`;
+                    }
+                }
+            }, 60);
+
+            setTimeout(async () => {
+                clearInterval(somGiroInterval);
+                document.getElementById("btn-principal-sortear").disabled = false;
+                document.getElementById("btn-sortear-10").disabled = false;
+
+                const dataHoraStr = formatarData();
+                dadosUser.rolagens = Math.max(0, dadosUser.rolagens - qtd);
+
+                let contemRaroGeral = false; let htmlResultados = "";
+
+                for (let res of resultadosFinais) {
+                    dadosUser.historico.push({ categoria: res.categoria, afinidade: res.item.nome, data: dataHoraStr });
+                    let corExibicao = "#fff";
+                    if (res.categoria === "Cósmicas") corExibicao = "#da70d6";
+                    if (res.categoria === "Celestiais") corExibicao = "#ffa500";
+                    if (res.categoria === "Espirituais") corExibicao = "#00ffff";
+
+                    if (res.raro) {
+                        contemRaroGeral = true;
+                        await db.collection("ranking").add({ nome: dadosUser.exibicao, afinidade: res.item.nome, categoria: res.categoria, data_timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                        estourarParticulas(corExibicao); 
+                    }
+
+                    htmlResultados += `<div class="item-resultado-bloco">
+                        <span style="font-size:12px; text-transform:uppercase; color:#a982ed;">[${res.categoria}]</span>
+                        <h4 style="margin: 4px 0; font-size:18px; color:${corExibicao}; filter: drop-shadow(0 0 4px currentColor);">${res.item.nome}</h4>
+                        <p style="margin:2px 0; font-size:13px;"><strong>Bônus:</strong> ${res.item.bonus}</p>
+                        <p style="margin:2px 0; font-size:13px; color:#bcaad6;"><strong>Passiva:</strong> ${res.item.passiva}</p>
+                    </div>`;
+                }
+
+                await userRef.update({ rolagens: dadosUser.rolagens, historico: dadosUser.historico });
+
+                if (contemRaroGeral) { somSucessoLendario(); } else { somTickRoleta(); }
+
+                document.getElementById("titulo-resultado").innerText = qtd === 10 ? "💥 Resultados do Combo 10x" : "Resultado do Sorteio";
+                document.getElementById("conteudo-resultados-lista").innerHTML = htmlResultados;
+                document.getElementById("resultado").style.display = "block";
+
+                atualizarContadorEVisual();
+                atualizarHistoricoPessoal();
+            }, 4600);
+        }
+
+        async function atualizarHistoricoPessoal() {
+            if (ehAdmin) return;
+            const doc = await db.collection("usuarios").doc(usuarioLogado).get();
+            const dadosUser = doc.data();
+            const lista = document.getElementById("lista-historico-pessoal");
+            
+            if (!dadosUser.historico || dadosUser.historico.length === 0) { lista.innerHTML = "<li>Nenhuma rolagem feita</li>"; return; }
+            lista.innerHTML = dadosUser.historico.map(h => `<li>[${h.data}] <strong>${h.afinidade}</strong></li>`).join("");
+        }
+
+        // CONTROLADOR DE ABAS DO PAINEL ADM
+        function abrirPainelAdm() { if (!ehAdmin) return; mudarAbaAdm('jogadores'); document.getElementById("modal-adm").classList.remove("hidden"); }
+        function fecharPainelAdm() { document.getElementById("modal-adm").classList.add("hidden"); }
+
+        function mudarAbaAdm(aba) {
+            document.getElementById("btn-aba-jogadores").classList.remove("active");
+            document.getElementById("btn-aba-sistema").classList.remove("active");
+            document.getElementById("conteudo-adm-jogadores").classList.add("hidden");
+            document.getElementById("conteudo-adm-sistema").classList.add("hidden");
+
+            if(aba === 'jogadores') {
+                document.getElementById("btn-aba-jogadores").classList.add("active");
+                document.getElementById("conteudo-adm-jogadores").classList.remove("hidden");
+                renderPainelJogadores();
+            } else if(aba === 'sistema') {
+                document.getElementById("btn-aba-sistema").classList.add("active");
+                document.getElementById("conteudo-adm-sistema").classList.remove("hidden");
+                renderizarPainelSistema();
+            }
+        }
+
+        // ABA 1: GERENCIAR JOGADORES
+        async function renderPainelJogadores() {
+            const container = document.getElementById("conteudo-adm-jogadores");
+            const snapshot = await db.collection("usuarios").get();
+            
+            if (snapshot.empty) { container.innerHTML = "<p style='color:#aaa;'>Nenhum personagem registrado no banco de dados.</p>"; return; }
+
+            let html = "";
+            snapshot.forEach(doc => {
+                const chave = doc.id; const user = doc.data();
+                if (user.isAdmin) return; // Não lista a própria conta admin para evitar autoexclusão
+
+                html += `<div class="user-row">
+                    <strong>Personagem:</strong> <span style="color:#fff; font-size:15px;">${user.exibicao}</span> | <strong>Saldo de Rolls:</strong> <span style="color:#a982ed; font-weight:bold;">${user.rolagens}</span>
+                    <div class="adm-actions">
+                        <button onclick="tocarClique(); ajustarRollsDireto('${chave}', 1)" style="background:#5cb85c; color:white; border:none; border-radius:3px;">➕ Dar +1 Roll</button>
+                        <button onclick="tocarClique(); ajustarRollsDireto('${chave}', -1)" style="background:#f0ad4e; color:white; border:none; border-radius:3px;">➖ Tirar -1 Roll</button>
+                        <div class="adm-input-container">
+                            <span>Definir total:</span>
+                            <input type="number" id="input-qtd-${chave}" value="${user.rolagens}" min="0">
+                            <button onclick="tocarClique(); definirValorCustomizado('${chave}')" style="background:#6a11cb; color:white; border:none; padding:4px 8px; border-radius:3px;">Definir</button>
+                        </div>
+                        <button onclick="tocarClique(); excluirPersonagemTotal('${chave}')" style="background:#d9534f; color:white; border:none; font-weight:bold; border-radius:3px; margin-left:10px;">🗑️ Excluir</button>
+                    </div>
+                    <div style="margin-top:8px;">
+                        <span style="font-size:12px; color:#a982ed;">Histórico do Jogador:</span>
+                        ${user.historico.length === 0 ? '<span style="color:#777; font-size:12px;"> Nenhum realizado</span>' : ''}
+                        ${user.historico.map((h, idx) => `
+                            <div class="roll-item">
+                                [${h.data}] ${h.afinidade} (${h.categoria}) 
+                                <button onclick="tocarClique(); removerRollUnicaPainel('${chave}', ${idx})" style="padding:1px 5px; font-size:10px; margin:0; background:#ff4d4d; color:white; border:none; border-radius:2px;">Remover Sorteio</button>
+                            </div>
+                        `).join("")}
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        async function ajustarRollsDireto(chave, valor) {
+            const userRef = db.collection("usuarios").doc(chave);
+            const doc = await userRef.get();
+            let novasRolagens = Math.max(0, doc.data().rolagens + valor);
+            await userRef.update({ rolagens: novasRolagens });
+            renderPainelJogadores();
+        }
+
+        async function definirValorCustomizado(chave) {
+            const inputElement = document.getElementById(`input-qtd-${chave}`);
+            let novoValor = parseInt(inputElement.value); if (isNaN(novoValor) || novoValor < 0) novoValor = 0;
+            await db.collection("usuarios").doc(chave).update({ rolagens: novoValor });
+            renderPainelJogadores();
+        }
+
+        async function removerRollUnicaPainel(chave, index) {
+            const userRef = db.collection("usuarios").doc(chave);
+            const doc = await userRef.get();
+            let historicoAtualizado = doc.data().historico;
+            historicoAtualizado.splice(index, 1);
+            await userRef.update({ historico: historicoAtualizado });
+            renderPainelJogadores();
+        }
+
+        async function excluirPersonagemTotal(chave) {
+            if(!confirm(`⚠️ ATENÇÃO: Deseja realmente deletar o personagem "${chave.toUpperCase()}" de forma permanente?`)) return;
+            await db.collection("usuarios").doc(chave).delete();
+            renderPainelJogadores();
+        }
+
+        // ABA 2: GERENCIAR ELEMENTOS E PROBABILIDADES
+        function renderizarPainelSistema() {
+            document.getElementById("edit-taxa-Elementais").value = taxas["Elementais"] || 0;
+            document.getElementById("edit-taxa-Sub-Elementais").value = taxas["Sub-Elementais"] || 0;
+            document.getElementById("edit-taxa-Espirituais").value = taxas["Espirituais"] || 0;
+            document.getElementById("edit-taxa-Celestiais").value = taxas["Celestiais"] || 0;
+            document.getElementById("edit-taxa-Cósmicas").value = taxas["Cósmicas"] || 0;
+        }
+
+        async function salvarTaxasNuvem() {
+            const tElem = parseFloat(document.getElementById("edit-taxa-Elementais").value) || 0;
+            const tSub = parseFloat(document.getElementById("edit-taxa-Sub-Elementais").value) || 0;
+            const tEsp = parseFloat(document.getElementById("edit-taxa-Espirituais").value) || 0;
+            const tCel = parseFloat(document.getElementById("edit-taxa-Celestiais").value) || 0;
+            const tCos = parseFloat(document.getElementById("edit-taxa-Cósmicas").value) || 0;
+
+            const total = tElem + tSub + tEsp + tCel + tCos;
+            if (Math.abs(total - 100) > 0.01) {
+                alert(`Erro: A soma das taxas deve ser exatamente 100%.\nSoma Atual: ${total}%`);
+                return;
+            }
+
+            await db.collection("config").doc("sistema").update({
+                "taxas.Elementais": tElem,
+                "taxas.Sub-Elementais": tSub,
+                "taxas.Espirituais": tEsp,
+                "taxas.Celestiais": tCel,
+                "taxas.Cósmicas": tCos
+            });
+            alert("Probabilidades de Drop atualizadas com sucesso na Nuvem!");
+        }
+
+        async function adicionarElementoNuvem() {
+            const cat = document.getElementById("add-el-categoria").value;
+            const nome = document.getElementById("add-el-nome").value.trim();
+            const bonus = document.getElementById("add-el-bonus").value.trim();
+            const passiva = document.getElementById("add-el-passiva").value.trim();
+
+            if (!nome || !bonus || !passiva) { alert("Preencha todos os campos da nova afinidade!"); return; }
+
+            const doc = await db.collection("config").doc("sistema").get();
+            const dados = doc.data();
+            
+            const listaCategoriaAtual = dados.afinidades[cat] || [];
+            listaCategoriaAtual.push({ nome: nome, bonus: bonus, passiva: passiva });
+
+            await db.collection("config").doc("sistema").update({
+                [`afinidades.${cat}`]: listaCategoriaAtual
+            });
+
+            alert(`"${nome}" adicionado com sucesso à categoria [${cat}] na Nuvem!`);
+            
+            // Limpa o formulário
+            document.getElementById("add-el-nome").value = "";
+            document.getElementById("add-el-bonus").value = "";
+            document.getElementById("add-el-passiva").value = "";
+        }
+    </script>
+</body>
+</html>
