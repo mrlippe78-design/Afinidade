@@ -1,170 +1,116 @@
 <!DOCTYPE html>
 <html lang="pt-PT">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Millennium RPG - Ultimate Social Engine</title>
-    
+
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-    <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; padding: 20px; padding-top: 110px; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; min-height: 100vh; 
-            box-sizing: border-box; position: relative;
-            background: radial-gradient(circle at center, #130624 0%, #05010a 100%);
-            color: #e2d7f3; overflow-x: hidden;
-        }
-        body::before {
-            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 0);
-            background-size: 30px 30px; z-index: -2; pointer-events: none;
-        }
-        
-        .hidden { display: none !important; }
-/* --- BARRA SUPERIOR DE NAVEGAÇÃO --- */
-        #top-navbar {
-            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
-            background: rgba(10, 5, 20, 0.95); border-bottom: 2px solid #3c1e69;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); z-index: 1000; box-sizing: border-box;
-        }
-        .nav-btn {
-            background: rgba(255,255,255,0.05); border: 1px solid #4a2d7a; color: white;
-            padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: bold;
-            cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.2s;
-        }
-        .nav-btn:hover { background: #3c1e69; }
-        .nav-left, .nav-right { display: flex; gap: 10px; align-items: center; }
-
-        /* --- AVISO GLOBAL PERSISTENTE --- */
-        #aviso-global-persistente {
-            position: fixed; top: 60px; left: 0; width: 100%; height: 35px;
-            background: linear-gradient(90deg, #aa7c11, #d4af37, #aa7c11); color: #000;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 12px; z-index: 999; box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            text-transform: uppercase; letter-spacing: 1px; padding: 0 10px; box-sizing: border-box;
-        }
-
-        /* --- TELAS MODAIS --- */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.9); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .modal-card { background: rgba(15, 6, 32, 0.98); border: 2px solid #d4af37; border-radius: 10px; padding: 20px; width: 95%; max-width: 550px; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.9); max-height: 85vh; overflow-y: auto; box-sizing: border-box; display: flex; flex-direction: column;}
-        .modal-header { border-bottom: 1px solid #4a2d7a; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;}
-        
-        /* --- TABELAS --- */
-        .tabela-adm { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px; background: rgba(0,0,0,0.3); }
-        .tabela-adm th, .tabela-adm td { border: 1px solid #3c1e69; padding: 6px; text-align: left; }
-        .tabela-adm th { background: #22143b; color: #d4af37; }
-        .btn-deletar-pequeno { background: #d9534f; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px; }
-
-        /* --- PAINÉIS LATERAIS --- */
-        .painel-lateral { border: 1px solid #4a2d7a; padding: 12px; background-color: rgba(15, 6, 32, 0.9); border-radius: 8px; box-shadow: 0 0 15px rgba(138, 43, 226, 0.2); z-index: 5; max-height: 230px; overflow-y: auto; font-size: 13px; }
-        #ranking { position: absolute; top: 115px; right: 20px; width: 280px; }
-        #ranking h3, #taxas-drop h3, #historico-pessoal h3 { margin-top: 0; margin-bottom: 8px; font-size: 14px; text-align: center; color: #d4af37; text-transform: uppercase; }
-        #ranking ol, #historico-pessoal ul { margin: 0; padding-left: 20px; color: #bcaad6; }
-        #taxas-drop { position: absolute; bottom: 20px; right: 20px; width: 240px; font-size: 12px; }
-        .taxa-linha { display: flex; justify-content: space-between; margin-bottom: 4px; color: #bcaad6; }
-        #historico-pessoal { position: absolute; bottom: 20px; left: 20px; width: 310px; font-size: 12px; }
-
-        /* --- CHAT MULTI-ABAS DINÂMICO --- */
-        #painel-chat-social { position: absolute; top: 115px; left: 20px; width: 320px; background: rgba(15, 6, 32, 0.95); border: 1px solid #4a2d7a; border-radius: 8px; display: flex; flex-direction: column; height: 350px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        .chat-abas { display: flex; background: #0c0418; border-bottom: 1px solid #3c1e69; border-top-left-radius: 8px; border-top-right-radius: 8px; overflow-x: auto; }
-        .chat-tab-btn { flex: 1; padding: 8px 5px; font-size: 11px; font-weight: bold; color: #bcaad6; background: none; border: none; cursor: pointer; text-align: center; border-right: 1px solid #1c0d30;}
-        .chat-tab-btn.active { background: #22143b; color: #d4af37; border-bottom: 2px solid #d4af37; }
-        .chat-mensagens-box { flex: 1; padding: 8px; overflow-y: auto; font-size: 12px; display: flex; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.2); }
-        .msg-linha { line-height: 1.4; word-break: break-word; background: rgba(255,255,255,0.02); padding: 4px 6px; border-radius: 4px; position: relative;}
-        .msg-linha strong { color: #a982ed; cursor: pointer; }
-        .msg-linha strong:hover { text-decoration: underline; }
-        .btn-report-msg { float: right; background: none; border: none; color: #d9534f; cursor: pointer; font-size: 10px; padding: 0 2px; }
-        .chat-input-row { display: flex; border-top: 1px solid #3c1e69; background: #0c0418; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
-        .chat-input-row input { flex: 1; border: none; background: none; color: white; padding: 8px; font-size: 12px; text-align: left; }
-        .chat-input-row button { background: #3c1e69; border: none; color: white; padding: 0 12px; font-size: 12px; font-weight: bold; cursor: pointer; }
-
-        /* --- CONTAINER CENTRAL --- */
-        .container { text-align: center; max-width: 500px; width: 100%; background: rgba(23, 11, 46, 0.85); padding: 25px; border-radius: 12px; border: 1px solid #3c1e69; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); backdrop-filter: blur(6px); z-index: 2; box-sizing: border-box;}
-        h2 { color: #f0e6ff; filter: drop-shadow(0 0 6px rgba(169, 130, 237, 0.5)); margin-top: 0; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 6px; font-weight: bold; color: #c4b4de; font-size: 13px; }
-        input, select, textarea { padding: 10px; width: 100%; box-sizing: border-box; font-size: 14px; text-align: center; background: #0d061a; border: 1px solid #563393; color: #fff; border-radius: 6px; }
-        textarea { text-align: left; resize: vertical; min-height: 70px;}
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #9966cc; box-shadow: 0 0 8px rgba(153, 102, 204, 0.5); }
-
-        button.btn-primario { padding: 12px 24px; font-size: 15px; cursor: pointer; margin: 8px 4px; background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: white; border: none; border-radius: 6px; font-weight: bold; box-shadow: 0 4px 15px rgba(106, 17, 203, 0.4); transition: 0.2s; }
-        button.btn-primario:hover { transform: translateY(-1px); }
-        button:disabled { background: #444 !important; cursor: not-allowed; color: #aaa; transform: none !important; box-shadow: none !important;}
-        
-        #btn-sortear-10 { background: linear-gradient(135deg, #d4af37 0%, #aa7c11 100%); }
-
-        /* --- ROLETA --- */
-        #roletas-wrapper { margin: 25px 0; max-height: 290px; overflow-y: auto; display: none; }
-        .roleta-container { margin-bottom: 12px; border: 2px solid #a982ed; background: #06020c; height: 52px; overflow: hidden; position: relative; border-radius: 8px; width: 100%; }
-        .roleta-trilho { display: flex; align-items: center; position: absolute; left: 0; top: 0; height: 100%; white-space: nowrap; }
-        .roleta-item { display: inline-flex; align-items: center; justify-content: center; width: 140px; font-size: 16px; font-weight: bold; color: #fff; height: 100%; border-right: 1px solid rgba(255,255,255,0.05); box-sizing: border-box; }
-        .roleta-container::before { content: "▼"; position: absolute; top: -3px; left: 50%; transform: translateX(-50%); color: #d4af37; font-size: 11px; z-index: 5; }
-        #resultado { margin-top: 20px; padding: 15px; border: 1px solid #563393; display: none; background-color: rgba(22, 10, 48, 0.95); text-align: left; border-radius: 8px; max-height: 300px; overflow-y: auto; }
-
-        /* --- FICHA --- */
-        .atributos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;}
-        .attr-box { background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; text-align: center; border: 1px solid #3c1e69; font-size: 13px;}
-        .btn-attr { background: #4a2d7a; color: white; border: none; padding: 2px 8px; font-size: 14px; margin: 0 5px; border-radius: 3px; cursor: pointer;}
-        
-        .missao-bloco, .inbox-bloco, .user-card-adm { background: rgba(0,0,0,0.4); border: 1px solid #563393; padding: 12px; border-radius: 6px; margin-bottom: 10px; text-align: left;}
-        .missao-bloco h4, .inbox-bloco h4 { margin: 0 0 5px 0; color: #d4af37; font-size: 15px;}
-        .missao-bloco p, .inbox-bloco p { margin: 0 0 10px 0; font-size: 13px; color: #c4b4de; }
-
-        /* --- SUPER PAINEL ADM --- */
-        .modal-adm-box { position: fixed; top: 2%; left: 50%; transform: translateX(-50%); background: #110822; border: 2px solid #6a11cb; padding: 20px; width: 96%; max-width: 850px; max-height: 96vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.8); z-index: 1050; border-radius: 10px; box-sizing: border-box;}
-        .aba-adm-container { display: flex; border-bottom: 1px solid #3c1e69; padding-bottom: 12px; gap: 4px; overflow-x: auto; white-space: nowrap;}
-        .aba-btn { padding: 8px 10px; font-size: 11px; background: #22143b; border: 1px solid #563393; color: #c4b4de; cursor: pointer; font-weight: bold; border-radius: 4px;}
-        .aba-btn.active { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: white; border: none; }
-
-        @media (max-width: 768px) {
-            body { padding-top: 115px; }
-            #aviso-global-persistente { font-size: 10px; height: 40px; text-align: center; top: 60px; }
-            .painel-lateral, #painel-chat-social { position: relative !important; top: auto !important; bottom: auto !important; left: auto !important; right: auto !important; width: 100% !important; margin-bottom: 15px; }
-            .container { order: 1; } #painel-chat-social { order: 2; height: 300px; } #ranking { order: 3; } #historico-pessoal { order: 4; } #taxas-drop { order: 5; }
-        }
-        
-        /* --- ACESSIBILIDADE, TOASTS, CHAT E ADM (ORGANIZADO) --- */
-        body.alto-contraste { background: #000000; }
-        body.alto-contraste::before { display: none; }
-        body.alto-contraste .container, body.alto-contraste .modal-card, body.alto-contraste .modal-adm-box, body.alto-contraste .painel-lateral { background: #000; border: 1px solid #fff; box-shadow: none; }
-        #toast-container { position: fixed; top: 70px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-        .toast-card { pointer-events: auto; background: rgba(20, 10, 40, 0.95); border-left: 5px solid #d4af37; border-radius: 6px; padding: 15px 20px; color: #fff; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); display: flex; justify-content: space-between; align-items: center; gap: 15px; animation: slideInRight 0.3s ease-out; min-width: 250px; }
-        .toast-card.error { border-color: #d9534f; }
-        .toast-card.success { border-color: #5cb85c; }
-        .toast-btn-close { background: none; border: none; color: #aaa; cursor: pointer; font-size: 16px; font-weight: bold; }
-        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes fadeOut { to { opacity: 0; } }
-        .chat-badge { position: absolute; top: -5px; right: -5px; color: white; font-size: 10px; font-weight: bold; padding: 2px 5px; border-radius: 10px; display: none; box-shadow: 0 0 5px rgba(0,0,0,0.8); }
-        .badge-global { background: #d9534f; }
-        .badge-privado { background: #5cb85c; z-index: 2; }
-        .chat-mensagens-box.fonte-grande { font-size: 16px; }
-        .dashboard-adm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .card-dash { background: rgba(0,0,0,0.5); border: 1px solid #4a2d7a; padding: 15px; border-radius: 8px; }
-        .feed-tempo-real { max-height: 300px; overflow-y: auto; font-size: 11px; color: #ccc; }
-        .feed-linha { margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px solid #333; }
-        .user-card-edit { background: #1a0f2e; border: 1px solid #563393; padding: 10px; border-radius: 6px; margin-bottom: 10px; }
-        .input-linha { display: flex; gap: 5px; margin-bottom: 5px; align-items: center;}
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
-    <div id="toast-container"></div>
-    <div id="top-navbar" class="hidden">
-        <div class="nav-left">
-            <button class="nav-btn" onclick="abrirModalMissoes()">📜 Missões</button>
-            <button class="nav-btn" onclick="abrirModalFeedback()">🐛 Reportar</button>
-            <button class="nav-btn" onclick="toggleAltoContraste()">🌓</button>
+    <!-- Área de Botões de Chat -->
+<div id="botoes-de-comunicacao" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+    
+    <!-- Botão do Chat Global -->
+    <button id="btn-abrir-chat-geral" onclick="toggleChat()" style="display: none; margin-right: 10px;">
+        🌍 Chat Global <span id="notificacao-chat-geral" style="display:none; color:#ff4a4a; font-size:18px;">●</span>
+    </button>
+    
+    <!-- Botão de Sussurros -->
+    <button id="btn-abrir-sussurros" onclick="togglePainelSussurros()" style="display: none;">
+        💬 Sussurros <span id="notificacao-sussurro-geral" style="display:none; color:#ff4a4a; font-size:18px;">●</span>
+    </button>
+
+</div>
+
+    <!-- Painel de Chat Privado Restilizado -->
+    <div id="sussurro-chat-panel" class="modo-escuro-chat">
+
+        <!-- Lado Esquerdo: Lista de Conversas -->
+        <div id="sussurro-sidebar">
+            <div class="chat-header-topo">
+                <span>Mensagens Privadas</span>
+                <button class="btn-fechar-chat" onclick="togglePainelSussurros()">❌</button>
+            </div>
+
+            <div class="novo-chat-box">
+                <input type="text" id="input-novo-alvo" placeholder="Nome do jogador...">
+                <button onclick="abrirSussurroPorInput()">➕</button>
+            </div>
+
+            <div id="lista-conversas-ativas"></div>
         </div>
-        <div class="nav-right">
-            <button class="nav-btn" onclick="toggleChat()" id="btn-nav-chat">💬 Chat <span id="chat-badge-contador" class="chat-badge badge-global"></span></button>
-            <button id="btn-inbox-adm" class="nav-btn hidden" onclick="abrirPainelAdm()" style="background:#d9534f; border-color:#d9534f;">⚙️ Mestre</button>
-            <button class="nav-btn" onclick="toggleSom()" id="btn-som-nav">🔊</button>
+
+        <!-- Lado Direito: Janela de Conversa Activa -->
+        <div id="sussurro-janela">
+            <div class="chat-header-topo">
+                <!-- Botão Voltar: Crítico para funcionamento em Smartphones -->
+                <button id="btn-voltar-lista" onclick="voltarParaListaMobile()">⬅️ Voltar</button>
+                <span id="nome-usuario-ativo">Seleciona um chat</span>
+                <button class="btn-fechar-chat desktop-only" onclick="togglePainelSussurros()">❌</button>
+            </div>
+
+            <div id="sussurro-mensagens">
+                <div class="aviso-inicial">Escolha uma conversa para iniciar...</div>
+            </div>
+
+            <div id="sussurro-input-area">
+                <input type="text" id="input-msg-privada" placeholder="Enviar sussurro..." disabled>
+                <button id="btn-enviar-privado" onclick="enviarMensagemPrivada()" disabled>✉️</button>
+            </div>
         </div>
     </div>
+    <!-- Modal de Ranking -->
+    <div id="modal-ranking"
+        style="display: none; position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 30, 0.95); padding: 20px; border: 2px solid #ffcc00; border-radius: 10px; width: 80%; max-width: 500px; z-index: 1000; color: white;">
+        <h2 style="text-align: center; color: #ffcc00;">🏆 Top 10 Jogadores</h2>
+        <div id="lista-ranking" style="margin-top: 15px; max-height: 300px; overflow-y: auto;">Carregando...</div>
+        <button onclick="document.getElementById('modal-ranking').style.display='none'"
+            style="margin-top: 15px; width: 100%; padding: 10px; cursor: pointer; background: #cc0000; color: white; border: none; border-radius: 5px;">Fechar</button>
+    </div>
+    <!-- 🌟 Jogue isso logo no início do seu <body> para que os avisos NUNCA travem o login -->
+    <div id="toast-container"
+        style="position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;">
+    </div>
 
+    <!-- Adicionado 'hidden' na barra inteira para sumir com TODOS os botões (incluindo som) no login -->
+    <div id="top-navbar" class="hidden">
+
+        <!-- BARRA DA ESQUERDA: Foco total na Gameplay -->
+        <div class="nav-left">
+            <button class="nav-btn" onclick="abrirModalMissoes()">📜 Missões</button>
+            <button class="nav-btn" onclick="verMinhaAfinidade()">🌟 Afinidade</button>
+            <!-- Chamando o novo painel responsivo -->
+            <button onclick="togglePainelSussurros()">💬 Sussurros</button>
+
+            <!-- Botão de Ranking dinâmico -->
+            <button id="btn-ranking-global" onclick="abrirRanking()"
+                style="display: none; background: #FFD700; color: black; border: none; padding: 8px 12px; cursor: pointer; font-weight: bold; border-radius: 5px;">
+                🏆 Ranking
+            </button>
+        </div>
+
+        <!-- BARRA DA DIREITA: Utilitários, Configurações e Staff -->
+        <div class="nav-right">
+            <!-- O Painel Mestre -->
+            <button id="btn-master-admin" onclick="abrirPainelAdm()"
+                style="display: none; background: #e94560; color: white; border: none; padding: 8px 12px; cursor: pointer; font-weight: bold; border-radius: 5px;">
+                🛠️ Painel Mestre
+            </button>
+
+            <button class="nav-btn" onclick="toggleAltoContraste()">🌓</button>
+            <button class="nav-btn" onclick="toggleSom()" id="btn-som-nav">🎵 Som</button>
+            <button class="nav-btn" onclick="abrirModalFeedback()">🐛 Reportar</button>
+            <button class="nav-btn" onclick="deslogarSistema()"
+                style="background: rgba(217, 83, 79, 0.15); border-color: #d9534f; color: #ff8888;">🚪 Sair</button>
+        </div>
+
+    </div>
     <div id="aviso-global-persistente" class="hidden">Carregando decreto real...</div>
 
     <div id="modal-feedback" class="modal-overlay hidden">
@@ -174,7 +120,8 @@
                 <button class="nav-btn" onclick="fecharModal('modal-feedback')">X</button>
             </div>
             <textarea id="texto-feedback" placeholder="Reporte bugs ou envie sugestões aos Mestres..."></textarea>
-            <button class="btn-primario" onclick="enviarFeedback()" style="margin-top:15px; width:100%;">Enviar Mensagem</button>
+            <button class="btn-primario" onclick="enviarFeedback()" style="margin-top:15px; width:100%;">Enviar
+                Mensagem</button>
         </div>
     </div>
 
@@ -211,14 +158,37 @@
                 Pontos Livres Disponíveis: <strong id="ficha-pontos-livres">20</strong>
             </div>
             <div class="atributos-grid">
-                <div class="attr-box">FOR <br> <button class="btn-attr" onclick="modificarAtributo('FOR', -1)">-</button> <span id="ficha-base-FOR">0</span> <button class="btn-attr" onclick="modificarAtributo('FOR', 1)">+</button> <br><span style="font-size:11px;color:#aaa;">Total: <strong id="ficha-total-FOR" style="color:#fff;">0</strong></span></div>
-                <div class="attr-box">VEL <br> <button class="btn-attr" onclick="modificarAtributo('VEL', -1)">-</button> <span id="ficha-base-VEL">0</span> <button class="btn-attr" onclick="modificarAtributo('VEL', 1)">+</button> <br><span style="font-size:11px;color:#aaa;">Total: <strong id="ficha-total-VEL" style="color:#fff;">0</strong></span></div>
-                <div class="attr-box">HAB <br> <button class="btn-attr" onclick="modificarAtributo('HAB', -1)">-</button> <span id="ficha-base-HAB">0</span> <button class="btn-attr" onclick="modificarAtributo('HAB', 1)">+</button> <br><span style="font-size:11px;color:#aaa;">Total: <strong id="ficha-total-HAB" style="color:#fff;">0</strong></span></div>
-                <div class="attr-box">RES <br> <button class="btn-attr" onclick="modificarAtributo('RES', -1)">-</button> <span id="ficha-base-RES">0</span> <button class="btn-attr" onclick="modificarAtributo('RES', 1)">+</button> <br><span style="font-size:11px;color:#aaa;">Total: <strong id="ficha-total-RES" style="color:#fff;">0</strong></span></div>
-                <div class="attr-box">POD <br> <button class="btn-attr" onclick="modificarAtributo('POD', -1)">-</button> <span id="ficha-base-POD">0</span> <button class="btn-attr" onclick="modificarAtributo('POD', 1)">+</button> <br><span style="font-size:11px;color:#aaa;">Total: <strong id="ficha-total-POD" style="color:#fff;">0</strong></span></div>
-                <div class="attr-box" style="background: rgba(212,175,55,0.1); border-color:#d4af37;">❤️ PV: <span id="ficha-pv">0</span> | ✳️ PP: <span id="ficha-pp">0</span><br>🛡️ DEF: <span id="ficha-def">0</span></div>
+                <div class="attr-box">FOR <br> <button class="btn-attr"
+                        onclick="modificarAtributo('FOR', -1)">-</button> <span id="ficha-base-FOR">0</span> <button
+                        class="btn-attr" onclick="modificarAtributo('FOR', 1)">+</button> <br><span
+                        style="font-size:11px;color:#aaa;">Total: <strong id="ficha-total-FOR"
+                            style="color:#fff;">0</strong></span></div>
+                <div class="attr-box">VEL <br> <button class="btn-attr"
+                        onclick="modificarAtributo('VEL', -1)">-</button> <span id="ficha-base-VEL">0</span> <button
+                        class="btn-attr" onclick="modificarAtributo('VEL', 1)">+</button> <br><span
+                        style="font-size:11px;color:#aaa;">Total: <strong id="ficha-total-VEL"
+                            style="color:#fff;">0</strong></span></div>
+                <div class="attr-box">HAB <br> <button class="btn-attr"
+                        onclick="modificarAtributo('HAB', -1)">-</button> <span id="ficha-base-HAB">0</span> <button
+                        class="btn-attr" onclick="modificarAtributo('HAB', 1)">+</button> <br><span
+                        style="font-size:11px;color:#aaa;">Total: <strong id="ficha-total-HAB"
+                            style="color:#fff;">0</strong></span></div>
+                <div class="attr-box">RES <br> <button class="btn-attr"
+                        onclick="modificarAtributo('RES', -1)">-</button> <span id="ficha-base-RES">0</span> <button
+                        class="btn-attr" onclick="modificarAtributo('RES', 1)">+</button> <br><span
+                        style="font-size:11px;color:#aaa;">Total: <strong id="ficha-total-RES"
+                            style="color:#fff;">0</strong></span></div>
+                <div class="attr-box">POD <br> <button class="btn-attr"
+                        onclick="modificarAtributo('POD', -1)">-</button> <span id="ficha-base-POD">0</span> <button
+                        class="btn-attr" onclick="modificarAtributo('POD', 1)">+</button> <br><span
+                        style="font-size:11px;color:#aaa;">Total: <strong id="ficha-total-POD"
+                            style="color:#fff;">0</strong></span></div>
+                <div class="attr-box" style="background: rgba(212,175,55,0.1); border-color:#d4af37;">❤️ PV: <span
+                        id="ficha-pv">0</span> | ✳️ PP: <span id="ficha-pp">0</span><br>🛡️ DEF: <span
+                        id="ficha-def">0</span></div>
             </div>
-            <button class="btn-primario" onclick="salvarFicha()" style="margin-top:15px; width:100%;">💾 Salvar Alterações da Ficha</button>
+            <button class="btn-primario" onclick="salvarFicha()" style="margin-top:15px; width:100%;">💾 Salvar
+                Alterações da Ficha</button>
         </div>
     </div>
 
@@ -229,28 +199,34 @@
                 <button class="nav-btn" onclick="fecharModal('modal-detetive-adm')">X</button>
             </div>
             <h4 style="margin:0 0 5px 0; color:#a982ed;">Afinidades Descobertas:</h4>
-            <div id="detetive-historico-lista" style="max-height: 250px; overflow-y:auto; font-size:12px; background:rgba(0,0,0,0.3); padding:10px; border-radius:5px; border:1px solid #3c1e69;"></div>
+            <div id="detetive-historico-lista"
+                style="max-height: 250px; overflow-y:auto; font-size:12px; background:rgba(0,0,0,0.3); padding:10px; border-radius:5px; border:1px solid #3c1e69;">
+            </div>
             <h4 style="margin:15px 0 5px 0; color:#a982ed;">Injetar Afinidade (Modo Deus):</h4>
             <select id="detetive-inject-select" style="margin-bottom:10px;"></select>
-            <button class="btn-primario" onclick="executarInjecaoDireta()" style="width:100%; margin:0;">Injetar no Inventário</button>
+            <button class="btn-primario" onclick="executarInjecaoDireta()" style="width:100%; margin:0;">Injetar no
+                Inventário</button>
         </div>
     </div>
 
     <div id="painel-chat-social" class="hidden">
         <div class="chat-abas">
-            <button id="tab-chat-global" class="chat-tab-btn active" onclick="mudarCanalChat('global')">🌍 Global</button>
-            <button id="tab-chat-privado" class="chat-tab-btn" onclick="mudarCanalChat('sussurro')">🔒 Sussurro</button>
+            <button id="tab-chat-global" class="chat-tab-btn active" onclick="mudarCanalChat('global')">🌍
+                Global</button>
         </div>
         <div id="chat-box-mensagens" class="chat-mensagens-box"></div>
         <div class="chat-input-row">
-            <input type="text" id="chat-input-texto" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter') enviarMensagemChat()">
+            <input type="text" id="chat-input-texto" placeholder="Digite sua mensagem..."
+                onkeydown="if(event.key==='Enter') enviarMensagemChat()">
             <button onclick="enviarMensagemChat()">Enviar</button>
         </div>
     </div>
 
     <div id="ranking" class="painel-lateral hidden">
-        <h3>🏆 Top 5 Guerreiros</h3>
-        <ol id="lista-ranking"><li>Aguardando Oráculo...</li></ol>
+        <h3>👥 Habitantes Online</h3>
+        <ul id="lista-jogadores-online" style="list-style: none; padding-left: 0; margin: 0; color: #bcaad6;">
+            <li>Aguardando Oráculo...</li>
+        </ul>
     </div>
     <div id="taxas-drop" class="painel-lateral hidden">
         <h3>📊 Taxas de Drop</h3>
@@ -266,24 +242,50 @@
         <div id="tela-login">
             <div class="form-group"><input type="text" id="nome-personagem" placeholder="Identificador (Nome)"></div>
             <div class="form-group"><input type="password" id="senha-personagem" placeholder="Senha Secreta"></div>
-            <button class="btn-primario" onclick="tocarClique(); entrarNoSistema()" style="width:100%;">Acessar Oráculo</button>
+            <button class="btn-primario" onclick="tocarClique(); entrarNoSistema()" style="width:100%;">Acessar
+                Oráculo</button>
         </div>
 
         <div id="tela-sorteio" class="hidden">
             <p style="margin-top:0;">Saudações, <strong id="usuario-atual" style="color:#fff;"></strong>!</p>
-            <div id="banner-evento-alerta" style="background:rgba(212,175,55,0.15); border:1px solid #d4af37; padding:8px; border-radius:6px; margin-bottom:15px; font-size:12px; font-weight:bold; color:#d4af37;" class="hidden"></div>
-            
+            <div id="banner-evento-alerta"
+                style="background:rgba(212,175,55,0.15); border:1px solid #d4af37; padding:8px; border-radius:6px; margin-bottom:15px; font-size:12px; font-weight:bold; color:#d4af37;"
+                class="hidden"></div>
             <div id="bloco-sorteio-comum">
-                <button class="btn-primario" id="btn-principal-sortear" onclick="tocarClique(); iniciarGiroRoleta(1)">Sortear 1x</button>
-                <button class="btn-primario hidden" id="btn-sortear-10" onclick="tocarClique(); iniciarGiroRoleta(10)">💥 Sorteio 10x</button>
-                <div id="contador-tentativas" style="margin-top:10px; font-size:13px; color:#a982ed;"></div>
+                <div class="roleta-3d-container">
+                    <div id="roleta-visual" class="roleta-3d" onclick="girarRoleta3D(1)">🔮</div>
+                </div>
+
+                <!-- ELEMENTO ADICIONADO: O trilho horizontal que o JS exige para a animação -->
+                <div id="roletas-wrapper"
+                    style="display: none !important; width: 0; height: 0; overflow: hidden; position: absolute;"></div>
+
+                <!-- ELEMENTO ADICIONADO: A caixa de resultados para mostrar o prémio no final -->
+                <div id="resultado"
+                    style="display: none; margin-top: 15px; background: rgba(0,0,0,0.5); padding: 10px; border: 1px solid #d4af37; border-radius: 8px;">
+                    <h3 style="color:#d4af37; margin-top:0;">✨ Obtiveste:</h3>
+                    <div id="conteudo-resultados-lista"></div>
+                </div>
+
+                <button id="btn-girar" class="btn-primario" onclick="girarRoleta3D(1)"
+                    style="width: 200px; margin-top: 15px;">Girar (1 Essência)</button>
+
+                <div id="contador-tentativas" style="margin-top:15px; font-size:14px; color:#a982ed;"></div>
             </div>
-            <div id="roletas-wrapper"></div>
-            <div id="resultado"><h3>Resultado</h3><div id="conteudo-resultados-lista"></div></div>
-            
+            <!-- SOM DA ROLETA A GIRAR (Opcional, se quiser mudar também) -->
+            <audio id="audio-roletando" src="medieval/rolling.mp3" preload="auto"></audio>
+
+            <!-- NOVO SOM DE FAIL (Quando não ganha nada raro) -->
+            <audio id="audio-fail" src="medieval/fail.mp3" preload="auto"></audio>
+
+            <!-- NOVO SOM DE SUCESSO/RARO (Quando ganha o prémio bom) -->
+            <audio id="audio-sucesso" src="medieval/raro.mp3" preload="auto"></audio>
             <div style="margin-top: 20px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-                <button onclick="tocarClique(); abrirFicha(usuarioLogado)" style="background:#d4af37; color:#111; font-weight:bold; font-size:12px; padding:8px 14px; border:none; border-radius:4px; cursor:pointer;">📜 Ver Ficha</button>
-                <button onclick="tocarClique(); deslogar()" style="background:#22143b; border:1px solid #4a2d7a; color:#c4b4de; font-size:12px; padding:8px 14px; border-radius:4px; cursor:pointer;">Sair</button>
+                <button onclick="tocarClique(); abrirFicha(usuarioLogado)"
+                    style="background:#d4af37; color:#111; font-weight:bold; font-size:12px; padding:8px 14px; border:none; border-radius:4px; cursor:pointer;">📜
+                    Ver Ficha</button>
+                <button onclick="tocarClique(); deslogar()"
+                    style="background:#22143b; border:1px solid #4a2d7a; color:#c4b4de; font-size:12px; padding:8px 14px; border-radius:4px; cursor:pointer;">Sair</button>
             </div>
         </div>
     </div>
@@ -294,15 +296,19 @@
             <button class="nav-btn" onclick="fecharModal('modal-adm')">X Fechar</button>
         </div>
         <div class="aba-adm-container">
-            <button id="btn-aba-jogadores" class="aba-btn active" onclick="mudarAbaAdm('jogadores')">👥 Jogadores & Mod</button>
+            <button id="btn-aba-jogadores" class="aba-btn active" onclick="mudarAbaAdm('jogadores')">👥 Jogadores &
+                Mod</button>
             <button id="btn-aba-missoes" class="aba-btn" onclick="mudarAbaAdm('missoes')">📜 Missões Semanais</button>
             <button id="btn-aba-raca" class="aba-btn" onclick="mudarAbaAdm('raca')">🧬 Raças & Classes</button>
-            <button id="btn-aba-afinidades" class="aba-btn" onclick="mudarAbaAdm('afinidades')">✨ Afinidades & Drops</button>
-            <button id="btn-aba-servidor" class="aba-btn" onclick="mudarAbaAdm('servidor')">⚙️ Configurações Globais</button>
-            <button id="btn-aba-denuncias" class="aba-btn" onclick="mudarAbaAdm('denuncias')" style="background:#d9534f;">🚩 Denúncias Chat</button>
+            <button id="btn-aba-afinidades" class="aba-btn" onclick="mudarAbaAdm('afinidades')">✨ Afinidades &
+                Drops</button>
+            <button id="btn-aba-servidor" class="aba-btn" onclick="mudarAbaAdm('servidor')">⚙️ Configurações
+                Globais</button>
+            <button id="btn-aba-denuncias" class="aba-btn" onclick="mudarAbaAdm('denuncias')"
+                style="background:#d9534f;">🚩 Denúncias Chat</button>
             <button id="btn-aba-inbox" class="aba-btn" onclick="mudarAbaAdm('inbox')">📥 Bug Reports</button>
         </div>
-        
+
         <div id="conteudo-adm-jogadores" class="aba-adm-conteudo" style="margin-top:15px;">
             <div class="dashboard-adm-grid">
                 <div class="card-dash">
@@ -311,48 +317,69 @@
                 </div>
                 <div class="card-dash">
                     <h3 style="color:#a982ed; margin-top:0;">📜 Lista de Almas (Edição Divina)</h3>
-                    <div id="lista-jogadores-edicao" class="lista-jogadores-adm" style="max-height: 300px; overflow-y: auto;">Carregando jogadores...</div>
+                    <div id="lista-jogadores-edicao" class="lista-jogadores-adm"
+                        style="max-height: 300px; overflow-y: auto;">Carregando jogadores...</div>
                 </div>
             </div>
         </div>
-        
+
         <div id="conteudo-adm-missoes" class="aba-adm-conteudo hidden" style="margin-top:15px;">
             <h3 style="color:#d4af37; font-size:14px; margin-bottom:5px;">Criar Missão Semanal</h3>
             <input type="text" id="nova-missao-titulo" placeholder="Título da Missão" style="margin-bottom:8px;">
             <textarea id="nova-missao-desc" placeholder="Instruções da missão..." style="margin-bottom:8px;"></textarea>
-            <button class="btn-primario" onclick="criarMissaoAdmin()" style="width:100%; margin:0 0 15px 0;">➕ Publicar Missão</button>
-            <button onclick="resetarMissoesJogadores()" style="background:#d9534f; color:white; border:none; padding:8px; border-radius:4px; font-weight:bold; cursor:pointer; width:100%; margin-bottom:15px;">⚠️ Zerar Progresso da Semana de Todos</button>
+            <button class="btn-primario" onclick="criarMissaoAdmin()" style="width:100%; margin:0 0 15px 0;">➕ Publicar
+                Missão</button>
+            <button onclick="resetarMissoesJogadores()"
+                style="background:#d9534f; color:white; border:none; padding:8px; border-radius:4px; font-weight:bold; cursor:pointer; width:100%; margin-bottom:15px;">⚠️
+                Zerar Progresso da Semana de Todos</button>
             <h4 style="color:#a982ed; margin:5px 0;">Missões Ativas:</h4>
             <div id="lista-missoes-adm"></div>
         </div>
 
         <div id="conteudo-adm-raca" class="aba-adm-conteudo hidden" style="margin-top:15px;">
             <h4 style="color:#d4af37; margin-bottom:5px;">🧬 Raças Cadastradas:</h4>
-            <table class="tabela-adm"><thead id="th-racas"></thead><tbody id="tb-racas"></tbody></table>
+            <table class="tabela-adm">
+                <thead id="th-racas"></thead>
+                <tbody id="tb-racas"></tbody>
+            </table>
             <h4 style="color:#d4af37; margin-bottom:5px;">⚔️ Classes Cadastradas:</h4>
-            <table class="tabela-adm"><thead id="th-classes"></thead><tbody id="tb-classes"></tbody></table>
+            <table class="tabela-adm">
+                <thead id="th-classes"></thead>
+                <tbody id="tb-classes"></tbody>
+            </table>
         </div>
 
         <div id="conteudo-adm-afinidades" class="aba-adm-conteudo hidden" style="margin-top:15px;">
             <h4 style="color:#d4af37; margin-bottom:5px;">📊 Balanceamento de Percentuais:</h4>
-            <div id="grid-taxas-admin" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:6px; margin-bottom:8px;"></div>
-            <button onclick="salvarTaxasNuvem()" style="background:#5cb85c; color:white; border:none; padding:8px; border-radius:4px; font-weight:bold; width:100%; margin-bottom:15px;">💾 Gravar Novas Taxas</button>
+            <div id="grid-taxas-admin"
+                style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:6px; margin-bottom:8px;">
+            </div>
+            <button onclick="salvarTaxasNuvem()"
+                style="background:#5cb85c; color:white; border:none; padding:8px; border-radius:4px; font-weight:bold; width:100%; margin-bottom:15px;">💾
+                Gravar Novas Taxas</button>
             <h4 style="color:#d4af37; margin-bottom:5px;">✨ Habilidades por Categoria:</h4>
-            <div id="lista-afinidades-existentes-adm" style="max-height:280px; overflow-y:auto; border:1px solid #3c1e69; padding:8px; background:rgba(0,0,0,0.2);"></div>
+            <div id="lista-afinidades-existentes-adm"
+                style="max-height:280px; overflow-y:auto; border:1px solid #3c1e69; padding:8px; background:rgba(0,0,0,0.2);">
+            </div>
         </div>
 
         <div id="conteudo-adm-servidor" class="aba-adm-conteudo hidden" style="margin-top:15px;">
             <h3 style="color:#d4af37; font-size:14px; margin-bottom:5px;">🎁 Presente Global</h3>
-            <input type="number" id="gift-qtd" placeholder="Quantidade de Essências para TODOS" style="margin-bottom:8px;">
-            <button onclick="enviarPresenteGlobal()" style="background:#5bc0de; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer; width:100%; margin-bottom:15px;">🚀 Enviar Essências Globalmente</button>
-            
+            <input type="number" id="gift-qtd" placeholder="Quantidade de Essências para TODOS"
+                style="margin-bottom:8px;">
+            <button onclick="enviarPresenteGlobal()"
+                style="background:#5bc0de; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer; width:100%; margin-bottom:15px;">🚀
+                Enviar Essências Globalmente</button>
+
             <h3 style="color:#d4af37; font-size:14px; margin-bottom:5px;">🛡️ Parâmetros Internos</h3>
             <div class="form-group"><label>Texto do Aviso Global:</label><input type="text" id="cfg-aviso-texto"></div>
             <div style="display:flex; gap:10px; margin-bottom:12px;">
                 <div style="flex:1;"><label>Limite Pity:</label><input type="number" id="cfg-pity-max"></div>
                 <div style="flex:1;"><label>Nível Máximo:</label><input type="number" id="cfg-lvl-max"></div>
             </div>
-            <button onclick="salvarConfigGlobais()" style="background:#5cb85c; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; width:100%; cursor:pointer;">💾 Atualizar Servidor</button>
+            <button onclick="salvarConfigGlobais()"
+                style="background:#5cb85c; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; width:100%; cursor:pointer;">💾
+                Atualizar Servidor</button>
         </div>
 
         <div id="conteudo-adm-denuncias" class="aba-adm-conteudo hidden" style="margin-top:15px;">
@@ -363,710 +390,19 @@
             <div id="lista-inbox-mensagens"></div>
         </div>
     </div>
+    <!-- Modal Oculto -->
+    <div id="modal-afinidade"
+        style="display:none; position:fixed; top:20%; left:50%; transform:translate(-50%, 0); background:#222; padding:20px; border:2px solid #d4af37; z-index:999; color:white; border-radius:8px;">
+        <h2 id="modal-afinidade-titulo">Afinidade</h2>
+        <p id="modal-afinidade-buffs"></p>
+        <button onclick="document.getElementById('modal-afinidade').style.display='none'">Fechar</button>
+    </div>
+    <!-- Leitor de Música da Taverna -->
+    <audio id="musica-medieval" loop preload="auto">
+        <source src="medieval/ambiente.mp3.mp3" type="audio/mpeg">
+    </audio>
+    <script src="js/main.js"></script>
 
-    <script>
-        // CONFIGURAÇÃO DO FIREBASE
-        const firebaseConfig = {
-            apiKey: "AIzaSyAyCR1Hod1kFemfLkXlPme88ihbRFlXhaM",
-            authDomain: "sorteioafinidade.firebaseapp.com",
-            projectId: "sorteioafinidade",
-            storageBucket: "sorteioafinidade.firebasestorage.app",
-            messagingSenderId: "338718810770",
-            appId: "1:338718810770:web:7c0cc44fbf70df30b27c4b"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        // ---- NOVAS FUNÇÕES GLOBAIS ----
-function showToast(mensagem, tipo = 'info') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div'); toast.className = `toast-card ${tipo}`;
-    toast.innerHTML = `<span>${mensagem}</span> <button class="toast-btn-close" onclick="this.parentElement.remove()">×</button>`;
-    container.appendChild(toast);
-    setTimeout(() => { if(toast.parentElement) { toast.style.animation = 'fadeOut 0.3s forwards'; setTimeout(() => toast.remove(), 300); } }, 5000);
-}
-let chatAberto = false; let mensagensNaoLidas = 0; let isChatPrivadoPrioridade = false;
-function toggleAltoContraste() { document.body.classList.toggle('alto-contraste'); }
-function toggleTamanhoFonteChat() { document.getElementById('chat-box-mensagens').classList.toggle('fonte-grande'); }
-function toggleChat() {
-    const painel = document.getElementById('painel-chat-social'); chatAberto = !chatAberto;
-    if(chatAberto) { painel.style.display = 'flex'; mensagensNaoLidas = 0; document.getElementById('chat-badge-contador').style.display = 'none'; setTimeout(() => scrollToBottom(true), 100); } 
-    else { painel.style.display = 'none'; }
-}
-function scrollToBottom(force = false) {
-    const box = document.getElementById('chat-box-mensagens');
-    if (force || (box.scrollHeight - box.clientHeight <= box.scrollTop + 20)) { setTimeout(() => box.scrollTop = box.scrollHeight, 100); }
-}
-function registrarAcaoFeed(texto) { db.collection("feed_acoes").add({ texto: texto, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); }
-
-        // --- BANCO DE DADOS DEFINITIVO DE RAÇAS, CLASSES E AFINIDADES INJETADO NATIVAMENTE ---
-        const BANCO_RACAS = {
-            "Humano": { FOR:1, VEL:1, HAB:1, RES:1, POD:1, passiva:"Adaptabilidade: Uma vez por combate, pode repetir um teste que tenha falhado." },
-            "Elfo": { FOR:0, VEL:0, HAB:3, RES:0, POD:2, passiva:"Sentidos Aguçados: Bônus de Percepção, rastreamento e pontaria duplicados." },
-            "Goblin": { FOR:0, VEL:2, HAB:3, RES:0, POD:0, passiva:"Improvisador Nato: Uma vez por combate, usa técnica sem gastar PP." },
-            "Anjo": { FOR:0, VEL:0, HAB:0, RES:2, POD:3, passiva:"Aura Divina: Toda cura, escudo ou proteção concedida é aplicada em x2." },
-            "Demónio": { FOR:3, VEL:0, HAB:0, RES:0, POD:2, passiva:"Fúria Infernal: Todo dano causado abaixo de 50% de PV é aplicado em x2." },
-            "Vampiro": { FOR:0, VEL:3, HAB:0, RES:0, POD:2, passiva:"Vampirismo: Toda recuperação de PV via drenagem é aplicada em x2." },
-            "Zoofolk": { FOR:2, VEL:2, HAB:0, RES:1, POD:0, passiva:"Instinto Bestial: Bônus de rastreamento, percepção, reflexos e perseguição em x2." }
-        };
-
-        const BANCO_CLASSES = {
-            "Acólito": { FOR:0, VEL:0, HAB:0, RES:1, POD:2, desc:"Focado em suporte, proteção e restauração de energia vital." },
-            "Mago": { FOR:0, VEL:0, HAB:0, RES:0, POD:3, desc:"Domínio absoluto da modelagem de energias arcanas perigosas." },
-            "Guerreiro": { FOR:2, VEL:0, HAB:0, RES:1, POD:0, desc:"Especialista em combate corporal direto e linha de frente duradoura." },
-            "Ladino": { FOR:0, VEL:2, HAB:1, RES:0, POD:0, desc:"Mestre da velocidade, infiltrações perigosas e ataques furtivos." }
-        };
-
-        const BANCO_AFINIDADES = {
-            "Elementais": [
-                { nome: "🔥 Fogo", bonus: "+2 POD", passiva: "Espírito Ardente: Todo dano causado por técnicas de Fogo é aplicado em x2." },
-                { nome: "🌊 Água", bonus: "+1 RES, +1 POD", passiva: "Fluxo Contínuo: Toda recuperação de PP é aplicada em x2." },
-                { nome: "🪨 Terra", bonus: "+2 RES", passiva: "Corpo de Pedra: Toda redução de dano é aplicada em x2." },
-                { nome: "🌪️ Ar", bonus: "+2 VEL", passiva: "Vento Favorável: Todos os bônus em Esquiva são aplicados em x2." }
-            ],
-            "Sub-Elementais": [
-                { nome: "⚡ Relâmpago", bonus: "+1 VEL, +1 HAB", passiva: "Reflexos Elétricos: Todos os bônus em Iniciativa são aplicados em x2." },
-                { nome: "❄️ Gelo", bonus: "+1 RES, +1 HAB", passiva: "Frieza Absoluta: Bônus para resistir a efeitos de controle em x2." },
-                { nome: "🌋 Magma", bonus: "+1 FOR, +1 POD", passiva: "Pele Incandescente: Todo dano refletido ao atacante é aplicado em x2." },
-                { nome: "🌫️ Névoa", bonus: "+1 VEL, +1 HAB", passiva: "Forma Nebulosa: Todos os bônus em Furtividade são aplicados em x2." },
-                { nome: "☣️ Veneno", bonus: "+1 POD, +1 RES", passiva: "Toxina Natural: Todo dano contínuo causado por você é aplicado em x2." },
-                { nome: "💎 Cristal", bonus: "+1 RES, +1 HAB", passiva: "Estrutura Cristalina: Resistência de barreiras/construções criadas em x2." },
-                { nome: "🧲 Metal", bonus: "+1 FOR, +1 RES", passiva: "Corpo Temperado: Bônus contra agarrões, empurrões e desarmes em x2." },
-                { nome: "🌱 Natureza", bonus: "+1 RES, +1 POD", passiva: "Vitalidade Natural: Toda recuperação de PV é aplicada em x2." },
-                { nome: "🏜️ Areia", bonus: "+1 POD, +1 HAB", passiva: "Tempestade de Poeira: Penalidades causadas em Percepção em x2." }
-            ],
-            "Espirituais": [
-                { nome: "👻 Espírito", bonus: "+2 POD", passiva: "Percepção Espiritual: Bônus para detectar magia/presenças em x2." },
-                { nome: "🧠 Psíquica", bonus: "+1 POD, +1 HAB", passiva: "Mente Serena: Todos os bônus contra ilusões e efeitos mentais em x2." },
-                { nome: "🌑 Sombras", bonus: "+1 VEL, +1 POD", passiva: "Caminho Sombrio: Todos os bônus em ambientes escuros em x2." },
-                { nome: "☀️ Luz", bonus: "+1 POD, +1 HAB", passiva: "Aura Purificadora: Bônus contra maldições, corrupção e trevas em x2." },
-                { nome: "🩸 Sangue", bonus: "+2 RES", passiva: "Instinto Primordial: Bônus concedidos abaixo de 50% dos PV em x2." },
-                { nome: "🔮 Arcana", bonus: "+2 POD", passiva: "Condutor Arcano: Toda redução de custo de PP é aplicada em x2." }
-            ],
-            "Celestiais": [
-                { nome: "😇 Celestial", bonus: "+1 POD, +1 RES", passiva: "Bênção Divina: Todos os bônus para resistir a efeitos negativos em x2." },
-                { nome: "🌙 Lunar", bonus: "+1 VEL, +1 POD", passiva: "Serenidade da Lua: Toda recuperação de PV e PP em descansos em x2." },
-                { nome: "☀️ Solar", bonus: "+1 FOR, +1 POD", passiva: "Luz Radiante: Toda penetração de defesa de técnicas em x2." },
-                { nome: "⭐ Estelar", bonus: "+1 HAB, +1 POD", passiva: "Guia das Estrelas: Todos os bônus em testes de Percepção em x2." }
-            ],
-            "Cósmicas": [
-                { nome: "🌌 Éter", bonus: "+2 POD", passiva: "Energia Universal: Todo aumento máximo de PP recebido é aplicado em x2." },
-                { nome: "🌠 Gravidade", bonus: "+1 FOR, +1 POD", passiva: "Peso Esmagador: Bônus em agarrões, empurrões e derrubadas em x2." },
-                { nome: "🕳️ Vazio", bonus: "+1 VEL, +1 POD", passiva: "Presença Inexistente: Bônus em Furtividade e Ocultação em x2." },
-                { nome: "☄️ Meteoro", bonus: "+1 FOR, +1 HAB", passiva: "Impacto Devastador: Todo dano adicional por acertos críticos em x2." },
-                { nome: "⏳ Tempo", bonus: "+1 VEL, +1 HAB", passiva: "Percepção Temporal: Todos os bônus em Iniciativa são aplicados em x2." },
-                { nome: "🌌 Espaço", bonus: "+1 HAB, +1 POD", passiva: "Dobra Espacial: Todo deslocamento adicional por técnicas em x2." }
-            ]
-        };
-
-        const TAXAS_PADRAO = { "Elementais": 50.0, "Sub-Elementais": 25.0, "Espirituais": 10.0, "Celestiais": 10.0, "Cósmicas": 5.0 };
-
-        // Variáveis de Estado
-        let afinidades = BANCO_AFINIDADES; let taxas = TAXAS_PADRAO; const todosElementosLista = [];
-        let racasAtuais = BANCO_RACAS; let classesAtuais = BANCO_CLASSES; let missoesSemanas = [];
-        let configGlobais = { pityMax: 30, nivelMax: 99, avisoGlobal: "Sejam bem-vindos!", eventoAtivo: "", bannerRateUp: "" };
-        let usuarioLogado = ""; let ehAdmin = false; let somAtivado = true;
-        let objFichaAtual = null; let usuarioVisualizandoFicha = ""; let playerDetetiveId = "";
-        let canalChatAtivo = "global"; let ultimoEnvioChat = 0; let receptorSussurro = "";
-
-        // Dicionário de Auto-Moderação
-        const PALAVRAS_BANIDAS = ["fracassado", "lixo", "nb", "noob", "hack", "corno", "otario"];
-
-        function fecharModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function toggleSom() { somAtivado = !somAtivado; document.getElementById('btn-som-nav').innerText = somAtivado ? '🔊' : '🔇'; }
-        
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function somClique() { if(somAtivado) { try{ let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(550, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.08); gain.gain.setValueAtTime(0.12, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.08); }catch(e){} } }
-        function somTickRoleta() { if(somAtivado) { try{ let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain(); osc.type = 'triangle'; osc.frequency.setValueAtTime(320, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.03); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.03); }catch(e){} } }
-        function tocarClique() { if(audioCtx.state === 'suspended') audioCtx.resume(); somClique(); }
-
-        // Inicializador de Tabelas Estáticas e Eventos Remotos
-        function setupEstruturasIniciais() {
-            Object.keys(afinidades).forEach(cat => { afinidades[cat].forEach(el => todosElementosLista.push({ ...el, categoria: cat })); });
-
-            db.collection("config").doc("sistema").onSnapshot((doc) => {
-                if (!doc.exists) {
-                    // Inicialização Primária da Nuvem com as raças e classes oficiais fornecidas
-                    db.collection("config").doc("sistema").set({ taxas: TAXAS_PADRAO, configGlobais: configGlobais, missoes: [] });
-                    return;
-                }
-                const dados = doc.data();
-                taxas = dados.taxas || TAXAS_PADRAO;
-                missoesSemanas = dados.missoes || [];
-                configGlobais = dados.configGlobais || configGlobais;
-
-                let htmlTaxas = ""; Object.keys(taxas).sort((a,b)=>taxas[b]-taxas[a]).forEach(cat => { htmlTaxas += `<div class="taxa-linha"><span>${cat}:</span> <strong>${Number(taxas[cat]).toFixed(1)}%</strong></div>`; });
-                document.getElementById("lista-taxas-dinamica").innerHTML = htmlTaxas;
-                document.getElementById("aviso-global-persistente").innerText = configGlobais.avisoGlobal || "";
-                
-                const bEvt = document.getElementById("banner-evento-alerta");
-                if (configGlobais.eventoAtivo) {
-                    bEvt.innerText = `🔥 EVENTO ATIVO: ${configGlobais.eventoAtivo} (Taxas de ${configGlobais.bannerRateUp} Modificadas!)`;
-                    bEvt.classList.remove("hidden");
-                } else { bEvt.classList.add("hidden"); }
-            });
-
-            db.collection("usuarios").where("scorePrestigio", ">", 0).orderBy("scorePrestigio", "desc").limit(5).onSnapshot(snap => {
-                let html = ""; let pos = 1;
-                snap.forEach(doc => { const u = doc.data(); html += `<li><strong style="color:#d4af37;">${pos}º ${u.tituloEquipado?`[${u.tituloEquipado.split(' ')[0]}] `:""}${u.exibicao}</strong><br><span style="font-size:11px;color:#bcaad6;">Nível: ${u.nivel||1}</span></li>`; pos++; });
-                document.getElementById("lista-ranking").innerHTML = html || "<li>Nenhuma lenda ativa...</li>";
-            });
-        }
-        setupEstruturasIniciais();
-
-        // --- SISTEMA DE LOGS E AMBIENTE SOCIAL ---
-        async function entrarNoSistema() {
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-            const idInput = document.getElementById("nome-personagem").value.trim();
-            const nomeId = idInput.toLowerCase().replace(/[^a-z0-9]/g, ''); 
-            const senha = document.getElementById("senha-personagem").value.trim();
-
-            if (!nomeId || senha.length < 4) { alert("Credenciais inválidas."); return; }
-
-            try {
-                const userRef = db.collection("usuarios").doc(nomeId);
-                const doc = await userRef.get();
-
-                if (!doc.exists) {
-                    const novoUser = { 
-                        exibicao: idInput, senha: senha, rolagens: 3, historico: [], isAdmin: (nomeId==="l"), banido: false,
-                        totalGiros: 0, totalRaros: 0, scorePrestigio: 0, pityCounter: 0, missoesConcluidas: [],
-                        raca: "", classe: "", nivel: 1, pontosBase: { FOR:0, VEL:0, HAB:0, RES:0, POD:0 }
-                    };
-                    await userRef.set(novoUser); usuarioLogado = nomeId; ehAdmin = (nomeId==="l");
-                } else {
-                    const dados = doc.data();
-                    if (dados.banido) { alert("Esta conta foi banida do servidor."); return; }
-                    if (dados.senha !== senha) { alert("Senha incorreta!"); return; }
-                    usuarioLogado = nomeId; ehAdmin = dados.isAdmin === true;
-                }
-
-                document.getElementById("top-navbar").classList.remove("hidden");
-                document.getElementById("aviso-global-persistente").classList.remove("hidden");
-                document.getElementById("painel-chat-social").classList.remove("hidden");
-                
-                if (ehAdmin) {
-                    document.getElementById("btn-inbox-adm").classList.remove("hidden");
-                    document.getElementById("usuario-atual").innerText = `Mestre (${idInput})`;
-                    document.getElementById("bloco-sorteio-comum").classList.add("hidden");
-                } else {
-                    document.getElementById("btn-inbox-adm").classList.add("hidden");
-                    document.getElementById("bloco-sorteio-comum").classList.remove("hidden");
-                    document.getElementById("ranking").classList.remove("hidden");
-                    document.getElementById("taxas-drop").classList.remove("hidden");
-                    document.getElementById("historico-pessoal").classList.remove("hidden");
-                    await atualizarInterfaceJogador();
-                }
-
-                document.getElementById("tela-login").classList.add("hidden"); 
-                document.getElementById("tela-sorteio").classList.remove("hidden");
-                ouvirMensagensChat();
-            } catch (e) { alert("Erro de conexão."); }
-        }
-
-        function deslogar() {
-            usuarioLogado = ""; ehAdmin = false;
-            document.getElementById("top-navbar").classList.add("hidden");
-            document.getElementById("aviso-global-persistente").classList.add("hidden");
-            document.getElementById("tela-sorteio").classList.add("hidden"); 
-            document.getElementById("ranking").classList.add("hidden");
-            document.getElementById("taxas-drop").classList.add("hidden");
-            document.getElementById("historico-pessoal").classList.add("hidden");
-            document.getElementById("painel-chat-social").classList.add("hidden");
-            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
-            document.getElementById("modal-adm").classList.add("hidden");
-            document.getElementById("tela-login").classList.remove("hidden");
-        }
-
-        async function atualizarInterfaceJogador() {
-            if (ehAdmin) return;
-            const doc = await db.collection("usuarios").doc(usuarioLogado).get(); const u = doc.data();
-            document.getElementById("usuario-atual").innerText = u.tituloEquipado ? `[${u.tituloEquipado.split(' ')[0]}] ${u.exibicao}` : u.exibicao;
-            document.getElementById("contador-tentativas").innerHTML = `Essências: <strong>${u.rolagens}</strong> <span style="font-size:11px;color:#888;display:block;">Piedade: ${u.pityCounter||0}/${configGlobais.pityMax}</span>`;
-            if (u.rolagens >= 10) document.getElementById("btn-sortear-10").classList.remove("hidden"); else document.getElementById("btn-sortear-10").classList.add("hidden");
-            document.getElementById("lista-historico-pessoal").innerHTML = u.historico.slice(-15).map(h => `<li>[${h.data}] <strong>${h.afinidade}</strong></li>`).reverse().join("");
-        }
-
-        // --- ENGINES DO CHAT MULTI-ABAS (COM PIPELINE DE AUTO-LIMPEZA) ---
-        function mudarCanalChat(canal) {
-            canalChatAtivo = canal;
-            document.getElementById("tab-chat-global").classList.remove("active");
-            document.getElementById("tab-chat-privado").classList.remove("active");
-            
-            if(canal === 'global') {
-                document.getElementById("tab-chat-global").classList.add("active");
-                document.getElementById("chat-input-texto").placeholder = "Mensagem para o mundo...";
-            } else {
-                document.getElementById("tab-chat-privado").classList.add("active");
-                if(!receptorSussurro) {
-                    let dest = prompt("Digita o ID de quem queres cochichar (ou digite 'l' para falar com o Mestre):");
-                    if(dest) receptorSussurro = dest.toLowerCase().trim();
-                }
-                document.getElementById("chat-input-texto").placeholder = `Sussurrar para [${receptorSussurro}]...`;
-            }
-            ouvirMensagensChat();
-        }
-
-        let unsubscribeChat = null;
-        function ouvirMensagensChat() {
-            if(unsubscribeChat) unsubscribeChat();
-            
-            let query = db.collection("chat").orderBy("timestamp", "desc").limit(50);
-            
-            unsubscribeChat = query.onSnapshot(snap => {
-                const box = document.getElementById("chat-box-mensagens");
-                let arr = [];
-                snap.forEach(d => {
-                    const m = d.data();
-                    // Regra de Visibilidade de Canais (Filtro Dinâmico)
-                    if(canalChatAtivo === 'global' && m.canal === 'global') {
-                        arr.push({id: d.id, ...m});
-                    } else if(canalChatAtivo === 'sussurro' && m.canal === 'sussurro') {
-                        if(ehAdmin || m.remetenteId === usuarioLogado || m.destinoId === usuarioLogado) {
-                            arr.push({id: d.id, ...m});
-                        }
-                    }
-                });
-                
-                arr.reverse();
-                box.innerHTML = arr.map(m => {
-                    let tag = m.remetenteId === 'l' ? `<span style="color:#d4af37;">[MESTRE]</span>` : ``;
-                    let corpo = `<span style="color:#c4b4de;">${m.texto}</span>`;
-                    if(m.canal === 'sussurro') corpo = `<i style="color:#ff69b4;">[Sussurro]: ${m.texto}</i>`;
-                    
-                    return `<div class="msg-linha">
-                        <button class="btn-report-msg" onclick="denunciarMensagemAltar('${m.id}', '${m.remetenteExibicao}', '${m.texto}')" title="Denunciar aos Deuses">🚩</button>
-                        ${tag} <strong onclick="definirAlvoSussurro('${m.remetenteId}')">${m.remetenteExibicao}:</strong> ${corpo}
-                    </div>`;
-                }).join("");
-                box.scrollTop = box.scrollHeight;
-            });
-        }
-
-        function definirAlvoSussurro(id) {
-            receptorSussurro = id;
-            mudarCanalChat('sussurro');
-        }
-
-        async function enviarMensagemChat() {
-            const agora = Date.now();
-            if(agora - ultimoEnvioChat < 2000) { alert("Calma, não floodes a taverna!"); return; }
-            
-            let txt = document.getElementById("chat-input-texto").value.trim();
-            if(!txt) return;
-            
-            ultimoEnvioChat = agora;
-            
-            // Filtro Automático de Linguagem
-            PALAVRAS_BANIDAS.forEach(p => {
-                let regex = new RegExp(p, "gi");
-                txt = txt.replace(regex, "[***]");
-            });
-
-            const docU = await db.collection("usuarios").doc(usuarioLogado).get();
-            const u = docU.data();
-
-            const novaMsg = {
-                canal: canalChatAtivo,
-                remetenteId: usuarioLogado,
-                remetenteExibicao: u.exibicao,
-                destinoId: canalChatAtivo === 'sussurro' ? receptorSussurro : "",
-                texto: txt,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            await db.collection("chat").add(novaMsg);
-            document.getElementById("chat-input-texto").value = "";
-
-            // Pipeline de Auto-Limpeza Ativa (Mantém apenas os últimos 50 registros globais na nuvem)
-            db.collection("chat").orderBy("timestamp", "desc").offset(50).get().then(s => {
-                s.forEach(doc => doc.ref.delete());
-            });
-        }
-
-        // CONTROLADOR DE DENÚNCIAS REAL-TIME
-        async function denunciarMensagemAltar(msgId, autor, texto) {
-            if(!confirm("Deseja reportar esta linha de texto diretamente aos deuses da moderação?")) return;
-            await db.collection("denuncias").add({
-                msgId: msgId,
-                autorInfrator: autor,
-                textoOfensivo: texto,
-                denunciante: usuarioLogado,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert("Denúncia protocolada com sucesso. Os Mestres agirão em breve.");
-        }
-
-        // --- FICHA E PROGRESSÃO ---
-        function extrairBonusAfinidade(nomeAf) {
-            let b = {FOR:0, VEL:0, HAB:0, RES:0, POD:0}; if(!nomeAf) return b;
-            const item = todosElementosLista.find(e => e.nome === nomeAf); if(!item || !item.bonus) return b;
-            let m = item.bonus.toLowerCase().match(/\+(\d+)\s*([a-zçã]+)/g);
-            if(m) { m.forEach(x => { let val = parseInt(x.match(/\d+/)[0]); if(x.includes('for')) b.FOR+=val; if(x.includes('vel')) b.VEL+=val; if(x.includes('hab')) b.HAB+=val; if(x.includes('res')) b.RES+=val; if(x.includes('pod')) b.POD+=val; }); }
-            return b;
-        }
-
-        async function abrirFicha(userId) {
-            tocarClique(); usuarioVisualizandoFicha = userId;
-            const doc = await db.collection("usuarios").doc(userId).get(); objFichaAtual = doc.data();
-            document.getElementById("ficha-nome").innerText = objFichaAtual.exibicao;
-            document.getElementById("ficha-nivel").innerText = `Nível ${objFichaAtual.nivel || 1}`;
-
-            let buildSelect = (elId, fonte) => {
-                let el = document.getElementById(elId); el.innerHTML = "<option value=''>Escolha...</option>";
-                Object.keys(fonte).forEach(key => el.innerHTML += `<option value="${key}">${key}</option>`);
-            };
-            buildSelect("ficha-raca", racasAtuais); buildSelect("ficha-classe", classesAtuais);
-            document.getElementById("ficha-raca").value = objFichaAtual.raca || "";
-            document.getElementById("ficha-classe").value = objFichaAtual.classe || "";
-            
-            document.getElementById("ficha-raca").disabled = !!objFichaAtual.raca && !ehAdmin;
-            document.getElementById("ficha-classe").disabled = !!objFichaAtual.classe && !ehAdmin;
-
-            calcularFicha(); document.getElementById("modal-ficha").classList.remove("hidden");
-        }
-
-        function modificarAtributo(attr, val) {
-            let pts = objFichaAtual.pontosBase || {FOR:0, VEL:0, HAB:0, RES:0, POD:0};
-            let maxP = 20 + (((objFichaAtual.nivel||1)-1)*2); let gasto = pts.FOR+pts.VEL+pts.HAB+pts.RES+pts.POD;
-            if (val>0 && gasto>=maxP) return; if (val<0 && pts[attr]<=0) return;
-            pts[attr]+=val; objFichaAtual.pontosBase=pts; calcularFicha();
-        }
-
-        function calcularFicha() {
-            let pts = objFichaAtual.pontosBase || {FOR:0, VEL:0, HAB:0, RES:0, POD:0};
-            let br = racasAtuais[document.getElementById("ficha-raca").value] || {FOR:0, VEL:0, HAB:0, RES:0, POD:0};
-            let bc = classesAtuais[document.getElementById("ficha-classe").value] || {FOR:0, VEL:0, HAB:0, RES:0, POD:0};
-            let ba = extrairBonusAfinidade(objFichaAtual.tituloEquipado);
-
-            ['FOR','VEL','HAB','RES','POD'].forEach(a => {
-                document.getElementById(`ficha-base-${a}`).innerText = pts[a];
-                document.getElementById(`ficha-total-${a}`).innerText = pts[a] + br[a] + bc[a] + ba[a];
-            });
-            let tRES = pts.RES + br.RES + bc.RES + ba.RES; let tPOD = pts.POD + br.POD + bc.POD + ba.POD;
-            document.getElementById("ficha-pv").innerText = tRES*5; document.getElementById("ficha-pp").innerText = tPOD*5; document.getElementById("ficha-def").innerText = Math.ceil(tRES/2);
-            document.getElementById("ficha-pontos-livres").innerText = (20 + (((objFichaAtual.nivel||1)-1)*2)) - (pts.FOR+pts.VEL+pts.HAB+pts.RES+pts.POD);
-        }
-
-        async function salvarFicha() {
-            objFichaAtual.raca = document.getElementById("ficha-raca").value; objFichaAtual.classe = document.getElementById("ficha-classe").value;
-            await db.collection("usuarios").doc(usuarioVisualizandoFicha).update({ raca: objFichaAtual.raca, classe: objFichaAtual.classe, pontosBase: objFichaAtual.pontosBase });
-            alert("Estrutura da Ficha Atualizada!"); fecharModal('modal-ficha');
-            if(ehAdmin) renderPainelJogadores();
-        }
-
-        // --- MISSÕES E SUPORTE ---
-        function abrirModalFeedback() { colocarClique(); document.getElementById("modal-feedback").classList.remove("hidden"); }
-        async function enviarFeedback() {
-            const txt = document.getElementById("texto-feedback").value.trim(); if(!txt) return;
-            const d = new Date();
-            await db.collection("feedbacks").add({ autor: usuarioLogado, texto: txt, data: `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${d.getMinutes()}`, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-            alert("Relatório enviado!"); document.getElementById("texto-feedback").value = ""; fecharModal('modal-feedback');
-        }
-
-        async function abrirModalMissoes() {
-            tocarClique(); const container = document.getElementById("lista-missoes-usuario"); container.innerHTML = "Consultando pergaminhos...";
-            document.getElementById("modal-missoes").classList.remove("hidden");
-            if(missoesSemanas.length === 0) { container.innerHTML = "<p>Sem ordens do mestre por hoje.</p>"; return; }
-            const docU = await db.collection("usuarios").doc(usuarioLogado).get(); const concluidas = docU.data().missoesConcluidas || [];
-            container.innerHTML = missoesSemanas.map(m => {
-                const checked = concluidas.includes(m.titulo);
-                return `<div class="missao-bloco"><h4>${m.titulo}</h4><p>${m.desc}</p>${checked?`<span style="color:#5cb85c; font-weight:bold;">✔️ Concluída</span>`:`<button class="btn-primario" onclick="concluirMissaoEfectiva('${m.titulo}')" style="padding:4px 8px; font-size:12px;">Concluir</button>`}</div>`;
-            }).join("");
-        }
-
-        window.concluirMissaoEfectiva = async function(titulo) {
-            await db.collection("usuarios").doc(usuarioLogado).update({ missoesConcluidas: firebase.firestore.FieldValue.arrayUnion(titulo) });
-            abrirModalMissoes();
-        }
-
-        // --- MECÂNICA DE SORTEIO / ROLETA ---
-        async function iniciarGiroRoleta(qtd) {
-            if (ehAdmin || todosElementosLista.length === 0) return;
-            const userRef = db.collection("usuarios").doc(usuarioLogado); const doc = await userRef.get(); let u = doc.data();
-            if (u.rolagens < qtd) { alert("Essências Insuficientes!"); return; }
-
-            document.getElementById("btn-principal-sortear").disabled = true; document.getElementById("btn-sortear-10").disabled = true;
-            const wrp = document.getElementById("roletas-wrapper"); wrp.innerHTML = ""; wrp.style.display = "block";
-
-            let resFinais = []; let soma = 0; Object.keys(taxas).forEach(c => soma += parseFloat(taxas[c]||0));
-            const ord = Object.keys(taxas).sort((a,b)=>taxas[b]-taxas[a]); let pity = u.pityCounter||0;
-
-            for (let r=0; r<qtd; r++) {
-                let rnd = Math.random()*soma; let cat = ord[ord.length-1]; let ac = 0;
-                for (let c of ord) { ac += parseFloat(taxas[c]||0); if (rnd<=ac) { cat=c; break; } }
-                
-                if(configGlobais.eventoAtivo && configGlobais.bannerRateUp === cat) {
-                    if (Math.random() < 0.3) { cat = configGlobais.bannerRateUp; }
-                }
-
-                let isRaro = (taxas[cat]||100) < 11;
-                if(!isRaro && pity >= (configGlobais.pityMax - 1)) { 
-                    const raras = ord.filter(c=>(taxas[c]||100)<11); 
-                    if(raras.length>0) { cat=raras[Math.floor(Math.random()*raras.length)]; isRaro=true; } 
-                }
-                let lista = afinidades[cat] || todosElementosLista; const item = lista[Math.floor(Math.random()*lista.length)];
-                if(isRaro) pity=0; else pity++;
-                resFinais.push({ item:item, cat:cat, raro:isRaro });
-            }
-
-            for (let r=0; r<qtd; r++) {
-                let cont = document.createElement("div"); cont.className="roleta-container"; let tr = document.createElement("div"); tr.className="roleta-trilho"; tr.id=`trilho-${r}`;
-                for (let i=0; i<35; i++) {
-                    let el = (i===28) ? resFinais[r].item : todosElementosLista[Math.floor(Math.random()*todosElementosLista.length)];
-                    let iv = document.createElement("div"); iv.className="roleta-item"; iv.innerText=el.nome;
-                    tr.appendChild(iv);
-                }
-                cont.appendChild(tr); wrp.appendChild(cont);
-            }
-
-            let intv = setInterval(() => { somTickRoleta(); }, 110);
-            requestAnimationFrame(() => {
-                for(let r=0;r<qtd;r++) { let t=document.getElementById(`trilho-${r}`); t.style.transition="transform 4.5s cubic-bezier(0.15, 0.75, 0.25, 1)"; t.style.transform=`translateX(${-(28*140) + ((t.parentElement.offsetWidth/2)-70)}px)`; }
-            });
-
-            setTimeout(async () => {
-                clearInterval(intv); document.getElementById("btn-principal-sortear").disabled=false; document.getElementById("btn-sortear-10").disabled=false;
-                let htm=""; let dStr = new Date().toLocaleDateString();
-
-                for (let res of resFinais) {
-                    u.historico.push({ categoria:res.cat, afinidade:res.item.nome, data:dStr });
-                    let cor = res.raro ? "#d4af37" : "#e2d7f3";
-                    htm+=`<div style='padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); color:${cor}; font-weight:bold;'>${res.item.nome} (${res.cat})</div>`;
-                }
-
-                let totalGirosAtual = (u.totalGiros||0) + qtd;
-                let novoNivel = Math.min(configGlobais.nivelMax || 99, Math.floor(1 + (totalGirosAtual / 25)));
-
-                await userRef.update({ rolagens: Math.max(0, u.rolagens-qtd), historico: u.historico, totalGiros: totalGirosAtual, totalRaros: (u.totalRaros||0)+(resFinais.filter(x=>x.raro).length), scorePrestigio: totalGirosAtual * 10, pityCounter: pity, nivel: novoNivel });
-                document.getElementById("conteudo-resultados-lista").innerHTML=htm; document.getElementById("resultado").style.display="block";
-                atualizarInterfaceJogador();
-            }, 4600);
-        }
-
-        // =========================================================================
-        // =========================== ENGINE MASTER ADM ===========================
-        // =========================================================================
-        function abrirPainelAdm() { if (!ehAdmin) return; mudarAbaAdm('jogadores'); document.getElementById("modal-adm").classList.remove("hidden"); }
-        
-        function mudarAbaAdm(aba) {
-            document.querySelectorAll(".aba-btn").forEach(btn => btn.classList.remove("active"));
-            document.querySelectorAll(".aba-adm-conteudo").forEach(div => div.classList.add("hidden"));
-            document.getElementById(`btn-aba-${aba}`).classList.add("active"); document.getElementById(`conteudo-adm-${aba}`).classList.remove("hidden");
-            
-            if(aba==='jogadores') renderPainelJogadores();
-            else if(aba==='missoes') renderPainelMissoesAdm();
-            else if(aba==='raca') renderPainelRacasClasses();
-            else if(aba==='afinidades') { renderPainelAfinidadesExistentes(); renderAbaAfinidadesGeral(); }
-            else if(aba==='servidor') renderizarCamposGlobaisServidor();
-            else if(aba==='denuncias') renderPainelDenunciasAdm();
-            else if(aba==='inbox') renderPainelInboxAdm();
-        }
-
-        async function renderPainelJogadores() {
-            const container = document.getElementById("conteudo-adm-jogadores"); container.innerHTML = "Varrendo servidores...";
-            const snap = await db.collection("usuarios").get();
-            let html = "";
-            snap.forEach(doc => {
-                const id = doc.id; const u = doc.data(); if(u.isAdmin) return;
-                html += `<div class="user-card-adm" style="${u.banido?'border-color:#d9534f; background:rgba(215,83,79,0.05);':''}">
-                    <strong style="font-size:15px; color:#d4af37;">${u.exibicao}</strong> [ID: ${id}]<br>
-                    <span style="font-size:12px; color:#aaa;">Nível: <strong>${u.nivel||1}</strong> | Saldo: <strong>${u.rolagens} Rolls</strong></span><br>
-                    <div style="margin-top:8px; display:flex; gap:4px; flex-wrap:wrap;">
-                        <button onclick="abrirFicha('${id}')" style="background:#4a2d7a; color:white; font-size:11px; padding:4px 6px; border:none; border-radius:3px; cursor:pointer;">Ficha Atributos</button>
-                        <button onclick="abrirDetetiveAdm('${id}')" style="background:#a982ed; color:black; font-size:11px; padding:4px 6px; border:none; border-radius:3px; font-weight:bold; cursor:pointer;">🕵️ Ver Grimório</button>
-                        <button onclick="modificarRollsJogador('${id}', 5)" style="background:#5cb85c; color:white; font-size:11px; padding:4px 6px; border:none; border-radius:3px; cursor:pointer;">+5 Rolls</button>
-                        <button onclick="toggleBanirJogador('${id}', ${u.banido||false})" style="background:#d9534f; color:white; font-size:11px; padding:4px 6px; border:none; border-radius:3px; cursor:pointer;">${u.banido?'Desbanir':'🚫 Banir'}</button>
-                    </div>
-                </div>`;
-            });
-            container.innerHTML = html || "<p>Nenhum guerreiro registrado.</p>";
-        }
-
-        window.modificarRollsJogador = async function(id, qtd) {
-            await db.collection("usuarios").doc(id).update({ rolagens: firebase.firestore.FieldValue.increment(qtd) });
-            renderPainelJogadores();
-        }
-        window.toggleBanirJogador = async function(id, status) {
-            if(!confirm(status ? "Reativar conta?" : "Deseja banir este jogador do servidor?")) return;
-            await db.collection("usuarios").doc(id).update({ banido: !status });
-            renderPainelJogadores();
-        }
-
-        window.abrirDetetiveAdm = async function(id) {
-            playerDetetiveId = id; const doc = await db.collection("usuarios").doc(id).get(); const u = doc.data();
-            document.getElementById("detetive-titulo").innerText = `Grimório: ${u.exibicao}`;
-            document.getElementById("detetive-historico-lista").innerHTML = u.historico && u.historico.length > 0 
-                ? u.historico.map(h => `<div>• [${h.data}] <strong>${h.afinidade}</strong></div>`).join("") 
-                : "Nenhuma afinidade conquistada.";
-
-            let sel = document.getElementById("detetive-inject-select"); sel.innerHTML = "";
-            todosElementosLista.forEach(e => sel.innerHTML += `<option value="${e.nome}">${e.nome} [${e.categoria}]</option>`);
-            document.getElementById("modal-detetive-adm").classList.remove("hidden");
-        }
-
-        window.executarInjecaoDireta = async function() {
-            let itemNome = document.getElementById("detetive-inject-select").value; if(!itemNome) return;
-            const itemObj = todosElementosLista.find(x => x.nome === itemNome);
-            let dStr = new Date().toLocaleDateString();
-            await db.collection("usuarios").doc(playerDetetiveId).update({
-                historico: firebase.firestore.FieldValue.arrayUnion({ categoria: itemObj.categoria, afinidade: itemObj.nome, data: dStr }),
-                tituloEquipado: itemObj.nome
-            });
-            alert("Item injetado diretamente no jogador!"); fecharModal("modal-detetive-adm"); renderPainelJogadores();
-        }
-
-        function renderPainelMissoesAdm() {
-            const container = document.getElementById("lista-missoes-adm");
-            container.innerHTML = missoesSemanas.map((m, idx) => `<div style="background:rgba(0,0,0,0.3); border:1px solid #3c1e69; padding:8px; margin-bottom:5px; border-radius:4px; font-size:12px; display:flex; justify-content:space-between;"><span><strong>${m.titulo}</strong></span><button class="btn-deletar-pequeno" onclick="deletarMissaoNuvem(${idx})">Deletar</button></div>`).join("");
-        }
-        window.criarMissaoAdmin = async function() {
-            const t = document.getElementById("nova-missao-titulo").value.trim(); const d = document.getElementById("nova-missao-desc").value.trim();
-            if(!t || !d) return;
-            await db.collection("config").doc("sistema").update({ missoes: firebase.firestore.FieldValue.arrayUnion({ titulo:t, desc:d }) });
-            document.getElementById("nova-missao-titulo").value=""; document.getElementById("nova-missao-desc").value="";
-        }
-        window.deletarMissaoNuvem = async function(idx) {
-            let n = [...missoesSemanas]; n.splice(idx, 1);
-            await db.collection("config").doc("sistema").update({ missoes: n });
-        }
-        window.resetarMissoesJogadores = async function() {
-            if(!confirm("Zerar as missões de todos?")) return;
-            const snap = await db.collection("usuarios").get(); let b = db.batch();
-            snap.forEach(d => { if(!d.data().isAdmin) b.update(d.ref, { missoesConcluidas: [] }); });
-            await b.commit(); alert("Semana reiniciada!");
-        }
-
-        function renderPainelRacasClasses() {
-            let h = `<tr><th>Nome</th><th>FOR</th><th>VEL</th><th>HAB</th><th>RES</th><th>POD</th></tr>`;
-            document.getElementById("th-racas").innerHTML = h; document.getElementById("th-classes").innerHTML = h;
-            
-            document.getElementById("tb-racas").innerHTML = Object.keys(racasAtuais).map(k => {
-                let r = racasAtuais[k]; return `<tr><td><strong>${k}</strong></td><td>${r.FOR}</td><td>${r.VEL}</td><td>${r.HAB}</td><td>${r.RES}</td><td>${r.POD}</td></tr>`;
-            }).join("");
-            document.getElementById("tb-classes").innerHTML = Object.keys(classesAtuais).map(k => {
-                let c = classesAtuais[k]; return `<tr><td><strong>${k}</strong></td><td>${c.FOR}</td><td>${c.VEL}</td><td>${c.HAB}</td><td>${c.RES}</td><td>${c.POD}</td></tr>`;
-            }).join("");
-        }
-
-        function renderAbaAfinidadesGeral() {
-            const grid = document.getElementById("grid-taxas-admin"); let htmlGrid = "";
-            Object.keys(taxas).forEach(cat => { htmlGrid += `<div><label style='font-size:11px;'>${cat}</label><input type='number' id='edit-taxa-${cat}' value='${taxas[cat]}' step='0.1' style='padding:4px; font-size:12px;'></div>`; });
-            grid.innerHTML = htmlGrid;
-        }
-
-        function renderPainelAfinidadesExistentes() {
-            const container = document.getElementById("lista-afinidades-existentes-adm");
-            let html = "";
-            Object.keys(afinidades).forEach(cat => {
-                html += `<div style='margin-bottom:12px;'><strong style='color:#d4af37; font-size:14px;'>[${cat} - Matriz Original]</strong><br>`;
-                afinidades[cat].forEach((el) => {
-                    html += `<div style='font-size:12px; margin:4px 0; background:rgba(255,255,255,0.02); padding:4px; border-radius:4px;'>• <strong>${el.nome}</strong> (${el.bonus}) - <i style="color:#aaa;">${el.passiva}</i></div>`;
-                });
-                html += `</div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        window.salvarTaxasNuvem = async function() {
-            let updates = {};
-            Object.keys(taxas).forEach(cat => { let el = document.getElementById(`edit-taxa-${cat}`); if(el) updates[`taxas.${cat}`] = parseFloat(el.value)||0; });
-            await db.collection("config").doc("sistema").update(updates); alert("Matriz de Drops rebalanceada!");
-        }
-
-        function renderizarCamposGlobaisServidor() {
-            document.getElementById("cfg-aviso-texto").value = configGlobais.avisoGlobal || "";
-            document.getElementById("cfg-pity-max").value = configGlobais.pityMax || 30;
-            document.getElementById("cfg-lvl-max").value = configGlobais.nivelMax || 99;
-        }
-
-        window.salvarConfigGlobais = async function() {
-            const pack = {
-                avisoGlobal: document.getElementById("cfg-aviso-texto").value,
-                pityMax: parseInt(document.getElementById("cfg-pity-max").value)||30,
-                nivelMax: parseInt(document.getElementById("cfg-lvl-max").value)||99,
-                eventoAtivo: configGlobais.eventoAtivo || "",
-                bannerRateUp: configGlobais.bannerRateUp || ""
-            };
-            await db.collection("config").doc("sistema").update({ configGlobais: pack });
-            alert("Configurações atualizadas na nuvem!");
-        }
-
-        window.enviarPresenteGlobal = async function() {
-            let qtd = parseInt(document.getElementById("gift-qtd").value); if(!qtd || qtd <= 0) return;
-            if(!confirm(`Enviar +${qtd} Essências para TODOS os players cadastrados?`)) return;
-            const snap = await db.collection("usuarios").get(); let b = db.batch();
-            snap.forEach(d => { if(!d.data().isAdmin) b.update(d.ref, { rolagens: firebase.firestore.FieldValue.increment(qtd) }); });
-            await b.commit(); alert(`Brinde global enviado!`);
-            document.getElementById("gift-qtd").value = "";
-        }
-
-        // NOVO PAINEL DE GESTÃO DE SEGURANÇA E DENÚNCIAS DO CHAT
-        async function renderPainelDenunciasAdm() {
-            const container = document.getElementById("lista-denuncias-chat"); container.innerHTML = "Examinando altares...";
-            const snap = await db.collection("denuncias").orderBy("timestamp", "desc").limit(20).get();
-            if(snap.empty) { container.innerHTML = "<p>Nenhuma infração de chat registrada nas abas do Oráculo.</p>"; return; }
-            
-            container.innerHTML = snap.docs.map(doc => {
-                const d = doc.data();
-                return `<div class="inbox-bloco" style="border-color:#d9534f;">
-                    <h4>🚩 Alvo Denunciado: <span style="color:#fff;">${d.autorInfrator}</span></h4>
-                    <p style="background:rgba(0,0,0,0.5); padding:6px; border-radius:4px; font-style:italic;">"${d.textoOfensivo}"</p>
-                    <span style="font-size:10px; color:#888;">Reportado por: ${d.denunciante}</span>
-                    <button class="btn-deletar-pequeno" style="float:right; margin-top:-5px;" onclick="arquivarDenuncia('${doc.id}')">Arquivar Caso</button>
-                </div>`;
-            }).join("");
-        }
-
-        window.arquivarDenuncia = async function(id) {
-            await db.collection("denuncias").doc(id).delete();
-            renderPainelDenunciasAdm();
-        }
-
-        async function renderPainelInboxAdm() {
-            const container = document.getElementById("lista-inbox-mensagens"); container.innerHTML = "Lendo relatórios...";
-            const snap = await db.collection("feedbacks").orderBy("timestamp", "desc").limit(20).get();
-            if(snap.empty) { container.innerHTML = "<p>Nenhum bug reportado.</p>"; return; }
-            container.innerHTML = snap.docs.map(doc => {
-                const f = doc.data();
-                return `<div class="inbox-bloco"><h4>🐛 Autor: ${f.autor} <button class="btn-deletar-pequeno" style="float:right;" onclick="deletarFeedbackInbox('${doc.id}')">Lido</button></h4><p>${f.texto}</p></div>`;
-            }).join("");
-        }
-        window.deletarFeedbackInbox = async function(id) {
-            await db.collection("feedbacks").doc(id).delete();
-            renderPainelInboxAdm();
-        }
-        // ---- MODO DEUS (ADM) E TÍTULOS CHAT ----
-function escutarFeedAdm() {
-    db.collection("feed_acoes").orderBy("timestamp", "desc").limit(15).onSnapshot(snap => {
-        const feed = document.getElementById("feed-global-adm");
-        if(feed) feed.innerHTML = snap.docs.map(d => `<div class="feed-linha">${d.data().texto}</div>`).join("");
-    });
-}
-async function renderListaJogadoresAdm() {
-    const container = document.getElementById("lista-jogadores-edicao"); container.innerHTML = "Carregando...";
-    const snap = await db.collection("usuarios").get(); let html = "";
-    snap.forEach(doc => {
-        const d = doc.data();
-        html += `<div class="user-card-edit"><h4>${doc.id}</h4>
-            <div class="input-linha"><label>Título:</label><input type="text" id="tit-${doc.id}" value="${d.titulo || ''}" style="width:120px;"></div>
-            <div class="input-linha"><label>Nível:</label><input type="number" id="lvl-${doc.id}" value="${d.nivel || 1}" style="width:50px;">
-            <label>Pts:</label><input type="number" id="pts-${doc.id}" value="${d.pontosTotais || 0}" style="width:50px;"></div>
-            <div class="input-linha"><label>Essências(+):</label><input type="number" id="ess-${doc.id}" value="0" style="width:50px;">
-            <button class="btn-sucesso-pequeno" onclick="salvarEdicaoDivina('${doc.id}', ${d.tentativas})">Salvar Ficha</button></div></div>`;
-    });
-    container.innerHTML = html;
-}
-window.salvarEdicaoDivina = async function(userId, tentativasAtuais) {
-    const tit = document.getElementById(`tit-${userId}`).value; const lvl = parseInt(document.getElementById(`lvl-${userId}`).value);
-    const pts = parseInt(document.getElementById(`pts-${userId}`).value); const addEss = parseInt(document.getElementById(`ess-${userId}`).value);
-    let updates = { titulo: tit, nivel: lvl, pontosTotais: pts }; if(addEss > 0) updates.tentativas = tentativasAtuais + addEss;
-    await db.collection("usuarios").doc(userId).update(updates);
-    showToast(`Ficha de ${userId} editada com sucesso!`, "success"); registrarAcaoFeed(`O Mestre alterou a ficha de ${userId}.`); renderListaJogadoresAdm();
-}
-// Modifique a chamada do botão de Mestre para abrir isso:
-const btnInboxAntigo = document.getElementById("btn-inbox-adm");
-if(btnInboxAntigo) btnInboxAntigo.onclick = function() { abrirPainelAdm(); escutarFeedAdm(); renderListaJogadoresAdm(); };
-    </script>
 </body>
+
 </html>
