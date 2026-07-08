@@ -13,58 +13,165 @@
 </head>
 
 <body>
-    <!-- Área de Botões de Chat -->
-<div id="botoes-de-comunicacao" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-    
-    <!-- Botão do Chat Global -->
-    <button id="btn-abrir-chat-geral" onclick="toggleChat()" style="display: none; margin-right: 10px;">
-        🌍 Chat Global <span id="notificacao-chat-geral" style="display:none; color:#ff4a4a; font-size:18px;">●</span>
-    </button>
-    
-    <!-- Botão de Sussurros -->
-    <button id="btn-abrir-sussurros" onclick="togglePainelSussurros()" style="display: none;">
-        💬 Sussurros <span id="notificacao-sussurro-geral" style="display:none; color:#ff4a4a; font-size:18px;">●</span>
-    </button>
+    <!-- 👁️ DASHBOARD: O OLHO QUE TUDO VÊ -->
+    <div id="painel-dashboard-stats" style="display: none; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
 
-</div>
-
-    <!-- Painel de Chat Privado Restilizado -->
-    <div id="sussurro-chat-panel" class="modo-escuro-chat">
-
-        <!-- Lado Esquerdo: Lista de Conversas -->
-        <div id="sussurro-sidebar">
-            <div class="chat-header-topo">
-                <span>Mensagens Privadas</span>
-                <button class="btn-fechar-chat" onclick="togglePainelSussurros()">❌</button>
-            </div>
-
-            <div class="novo-chat-box">
-                <input type="text" id="input-novo-alvo" placeholder="Nome do jogador...">
-                <button onclick="abrirSussurroPorInput()">➕</button>
-            </div>
-
-            <div id="lista-conversas-ativas"></div>
+        <!-- Card 1: Economia Global -->
+        <div class="card-dash"
+            style="flex: 1; min-width: 220px; background: #1a1525; border: 1px solid #4a3b69; padding: 15px; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+            <h4
+                style="color: #ccc; margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                💰 Essências em Circulação</h4>
+            <h2 id="stat-total-essencias" style="color: #ffca28; margin: 0; font-size: 28px; font-family: monospace;">0
+            </h2>
+            <p id="alerta-inflacao" style="margin: 5px 0 0 0; font-size: 11px; color: #888;"></p>
+        </div>
+        <div id="seu-id-do-olho" style="display: none;">
+            <!-- conteúdo do olho -->
         </div>
 
-        <!-- Lado Direito: Janela de Conversa Activa -->
-        <div id="sussurro-janela">
-            <div class="chat-header-topo">
-                <!-- Botão Voltar: Crítico para funcionamento em Smartphones -->
-                <button id="btn-voltar-lista" onclick="voltarParaListaMobile()">⬅️ Voltar</button>
-                <span id="nome-usuario-ativo">Seleciona um chat</span>
-                <button class="btn-fechar-chat desktop-only" onclick="togglePainelSussurros()">❌</button>
+        <!-- Card 2: Afinidade / Classe Suprema -->
+        <div class="card-dash"
+            style="flex: 1; min-width: 220px; background: #1a1525; border: 1px solid #4a3b69; padding: 15px; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+            <h4
+                style="color: #ccc; margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                🔥 Caminho Mais Trilhado</h4>
+            <!-- IDs CORRIGIDOS AQUI -->
+            <h2 id="stat-classe-dominante"
+                style="color: #9b59b6; margin: 0; font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                Buscando...</h2>
+            <p id="stat-classe-detalhe" style="margin: 5px 0 0 0; font-size: 11px; color: #aaa;">0 utilizadores
+                escolheram este destino</p>
+        </div>
+
+        <!-- Card 3: População Total -->
+        <div class="card-dash"
+            style="flex: 1; min-width: 220px; background: #1a1525; border: 1px solid #4a3b69; padding: 15px; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+            <h4
+                style="color: #ccc; margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                👥 Almas no Servidor</h4>
+            <h2 id="stat-total-jogadores" style="color: #5cb85c; margin: 0; font-size: 28px; font-family: monospace;">0
+            </h2>
+            <p style="margin: 5px 0 0 0; font-size: 11px; color: #aaa;">Jogadores registados na base</p>
+        </div>
+        <div style="width: 100%; display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
+
+            <!-- Bloco A: Top 3 Maiores Níveis -->
+            <div class="card-dash"
+                style="flex: 1; min-width: 250px; background: #1a1525; border: 1px solid #4a3b69; padding: 15px; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                <h4
+                    style="color: #a982ed; margin: 0 0 15px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                    🏆 Maiores Níveis (Top 3)</h4>
+                <ol id="rank-niveis"
+                    style="color: #fff; padding-left: 20px; margin: 0; line-height: 2; font-family: monospace; font-size: 14px;">
+                </ol>
             </div>
 
-            <div id="sussurro-mensagens">
-                <div class="aviso-inicial">Escolha uma conversa para iniciar...</div>
+            <!-- Bloco B: Campeões de Atributos -->
+            <div class="card-dash"
+                style="flex: 1; min-width: 250px; background: #1a1525; border: 1px solid #4a3b69; padding: 15px; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                <h4
+                    style="color: #a982ed; margin: 0 0 15px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                    ✨ Divindades dos Atributos</h4>
+                <ul id="rank-atributos"
+                    style="color: #fff; list-style: none; padding: 0; margin: 0; line-height: 1.8; font-family: monospace; font-size: 13px;">
+                </ul>
             </div>
 
-            <div id="sussurro-input-area">
-                <input type="text" id="input-msg-privada" placeholder="Enviar sussurro..." disabled>
-                <button id="btn-enviar-privado" onclick="enviarMensagemPrivada()" disabled>✉️</button>
+        </div>
+
+        <button onclick="carregarOlhoQueTudoVe()">🔄 Atualizar Oráculo</button>
+
+    </div>
+    </div>
+    <!-- PAINEL DE SUSSURROS NOVO -->
+    <div id="sussurro-chat-panel" class="hidden modo-escuro-chat"
+        style="position: fixed; right: 20px; bottom: 80px; width: 500px; height: 400px; display: flex; background: rgba(15, 15, 20, 0.95); border: 2px solid #d4af37; border-radius: 8px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.8); overflow: hidden;">
+
+        <!-- Barra Lateral de Contatos -->
+        <div id="sussurro-sidebar"
+            style="width: 35%; border-right: 1px solid #333; display: flex; flex-direction: column; background: rgba(0,0,0,0.4);">
+            <div class="sussurro-sidebar-header"
+                style="padding: 12px; border-bottom: 1px solid #333; font-weight: bold; color: #d4af37; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-size: 14px;">
+                Contatos
+            </div>
+
+            <div id="lista-conversas-ativas" class="sussurro-lista-contatos"
+                style="flex: 1; overflow-y: auto; color: white;">
+                <!-- A lista de contatos será injetada aqui pelo JS -->
+            </div>
+
+            <div class="sussurro-add-contato" style="padding: 10px; border-top: 1px solid #333;">
+                <input type="text" id="input-novo-alvo" placeholder="Adicionar nome..."
+                    style="width: 100%; padding: 6px; margin-bottom: 5px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; box-sizing: border-box;">
+                <button onclick="abrirSussurroPorInput()" class="seu-css-aqui">+ Nova Conversa</button>
+                </button>
+            </div>
+        </div>
+
+        <!-- Área de Mensagens -->
+        <div id="sussurro-main" style="width: 65%; display: flex; flex-direction: column;">
+
+            <!-- Topo com o Nome do Alvo e Botão Fechar -->
+            <div class="sussurro-main-header"
+                style="padding: 12px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.6);">
+                <strong id="nome-usuario-ativo" style="color: #d4af37; font-size: 15px;">🗣️ Selecione um alvo</strong>
+                <button onclick="togglePainelSussurros()" class="btn-fechar-sussurro"
+                    style="background: #d9534f; color: white; border: none; border-radius: 4px; cursor: pointer; padding: 4px 10px; font-weight: bold;">
+                    X
+                </button>
+            </div>
+
+            <!-- Caixa onde as mensagens vão aparecer -->
+            <div id="box-mensagens-sussurro" class="chat-mensagens-box"
+                style="flex: 1; overflow-y: auto; padding: 15px; color: white; display: flex; flex-direction: column; gap: 8px;">
+                <div style="color: #888; text-align: center; font-style: italic; margin-top: 50px;">
+                    As mensagens privadas aparecerão aqui.
+                </div>
+            </div>
+
+            <!-- Input e Botão de Enviar -->
+            <!-- Barra Rápida de Emojis -->
+            <div
+                style="background: rgba(0,0,0,0.8); padding: 5px 10px; display: flex; gap: 12px; font-size: 18px; border-top: 1px solid #333; justify-content: center; user-select: none;">
+                <span style="cursor: pointer; transition: transform 0.2s;"
+                    onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'"
+                    onclick="inserirEmoji('😀')">😀</span>
+                <span style="cursor: pointer; transition: transform 0.2s;"
+                    onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'"
+                    onclick="inserirEmoji('😂')">😂</span>
+                <span style="cursor: pointer; transition: transform 0.2s;"
+                    onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'"
+                    onclick="inserirEmoji('❤️')">❤️</span>
+                <span style="cursor: pointer; transition: transform 0.2s;"
+                    onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'"
+                    onclick="inserirEmoji('⚔️')">⚔️</span>
+                <span style="cursor: pointer; transition: transform 0.2s;"
+                    onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'"
+                    onclick="inserirEmoji('🛡️')">🛡️</span>
+                <span style="cursor: pointer; transition: transform 0.2s;"
+                    onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'"
+                    onclick="inserirEmoji('🔮')">🔮</span>
+                <span style="cursor: pointer; transition: transform 0.2s;"
+                    onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'"
+                    onclick="inserirEmoji('💀')">💀</span>
+            </div>
+
+            <!-- Input e Botão de Enviar -->
+            <div class="sussurro-input-area"
+                style="padding: 10px; border-top: 1px solid #333; display: flex; gap: 8px; background: rgba(0,0,0,0.4);">
+                <input type="text" id="input-msg-privada" disabled placeholder="Selecione alguém..."
+                    onkeydown="if(event.key==='Enter') enviarMensagemSussurro()"
+                    style="flex: 1; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 4px;">
+                <button id="btn-enviar-privado" disabled onclick="enviarMensagemSussurro()"
+                    style="background: #d4af37; color: black; font-weight: bold; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">
+                    Enviar
+                </button>
             </div>
         </div>
     </div>
+    <!-- FIM DO PAINEL DE SUSSURROS -->
+
     <!-- Modal de Ranking -->
     <div id="modal-ranking"
         style="display: none; position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 30, 0.95); padding: 20px; border: 2px solid #ffcc00; border-radius: 10px; width: 80%; max-width: 500px; z-index: 1000; color: white;">
@@ -79,14 +186,21 @@
     </div>
 
     <!-- Adicionado 'hidden' na barra inteira para sumir com TODOS os botões (incluindo som) no login -->
+    <!-- Adicionado 'hidden' na barra inteira para sumir com TODOS os botões (incluindo som) no login -->
     <div id="top-navbar" class="hidden">
 
-        <!-- BARRA DA ESQUERDA: Foco total na Gameplay -->
         <div class="nav-left">
             <button class="nav-btn" onclick="abrirModalMissoes()">📜 Missões</button>
             <button class="nav-btn" onclick="verMinhaAfinidade()">🌟 Afinidade</button>
-            <!-- Chamando o novo painel responsivo -->
-            <button onclick="togglePainelSussurros()">💬 Sussurros</button>
+            <!-- Botão para o Jogador abrir seu Grimório Pessoal -->
+            <button class="nav-btn" onclick="abrirGrimorioPessoal()"
+                style="background: linear-gradient(135deg, #4a3b69, #2b1f42); border: 1px solid #d4af37; color: #ffd700;">
+                📖 Meu Grimório
+            </button>
+
+            <!-- Botões de Chat Independentes -->
+            <button class="nav-btn" onclick="toggleChat()">🌍 Chat Global</button>
+            <button class="nav-btn" onclick="togglePainelSussurros()">💬 Sussurros</button>
 
             <!-- Botão de Ranking dinâmico -->
             <button id="btn-ranking-global" onclick="abrirRanking()"
@@ -95,9 +209,15 @@
             </button>
         </div>
 
+
         <!-- BARRA DA DIREITA: Utilitários, Configurações e Staff -->
         <div class="nav-right">
-            <!-- O Painel Mestre -->
+            <button id="btn-correio-admin" onclick="abrirModalCorreioAdmin()"
+                style="display: none; background: #27ae60; color: white; border: none; padding: 8px 12px; cursor: pointer; font-weight: bold; border-radius: 5px; margin-right: 5px;">
+                ✉️ Enviar Correio
+            </button>
+
+            <!-- O Painel Mestre original -->
             <button id="btn-master-admin" onclick="abrirPainelAdm()"
                 style="display: none; background: #e94560; color: white; border: none; padding: 8px 12px; cursor: pointer; font-weight: bold; border-radius: 5px;">
                 🛠️ Painel Mestre
@@ -109,6 +229,7 @@
             <button class="nav-btn" onclick="deslogarSistema()"
                 style="background: rgba(217, 83, 79, 0.15); border-color: #d9534f; color: #ff8888;">🚪 Sair</button>
         </div>
+    </div>
 
     </div>
     <div id="aviso-global-persistente" class="hidden">Carregando decreto real...</div>
@@ -122,6 +243,32 @@
             <textarea id="texto-feedback" placeholder="Reporte bugs ou envie sugestões aos Mestres..."></textarea>
             <button class="btn-primario" onclick="enviarFeedback()" style="margin-top:15px; width:100%;">Enviar
                 Mensagem</button>
+        </div>
+    </div>
+
+    <!-- 📖 MODAL DO GRIMÓRIO DE TÍTULOS (INDIVIDUAL DO JOGADOR) -->
+    <div id="modal-grimorio-titulos" class="modal-overlay hidden" style="z-index: 5000;">
+        <div class="modal-card"
+            style="max-width: 450px; background: #0f0b15; border: 2px solid #d4af37; border-radius: 10px; padding: 25px;">
+            <div class="modal-header"
+                style="border-bottom: 1px solid #4a3b69; padding-bottom: 10px; margin-bottom: 15px;">
+                <h2 style="color:#ffd700; margin:0; font-size: 20px;">📖 Grimório de Títulos</h2>
+                <button class="nav-btn" onclick="fecharGrimorioPessoal()">X</button>
+            </div>
+
+            <p style="color: #aaa; font-size: 13px; margin-bottom: 20px;">
+                Aqui jazem todos os títulos e alcunhas concedidos à sua alma pelo Mestre ao longo da sua jornada.
+            </p>
+
+            <!-- Lista onde os títulos serão renderizados -->
+            <div id="lista-titulos-grimorio"
+                style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 5px;">
+                <!-- Injetado via JS -->
+            </div>
+
+            <div style="margin-top: 20px; text-align: center; font-size: 11px; color: #555;">
+                Sua lenda está eternizada no Firestore.
+            </div>
         </div>
     </div>
 
@@ -191,7 +338,60 @@
                 Alterações da Ficha</button>
         </div>
     </div>
+    <!-- ✉️ MODAL DO SISTEMA DE CORREIO MÍSTICO (EXCLUSIVO ADM) -->
+    <div id="modal-correio-admin" class="modal-overlay hidden" style="z-index: 2000;">
+        <div class="modal-card" style="max-width: 600px; background: #1a1525; border: 2px solid #4a3b69;">
+            <div class="modal-header">
+                <h2 style="color:#d4af37; margin:0;">✉️ Enviar Recompensa Direcionada</h2>
+                <!-- Atualizado para a função exclusiva -->
+                <button class="nav-btn" onclick="fecharModalCorreioAdmin()">X</button>
+            </div>
 
+            <p style="color: #aaa; font-size: 12px; margin-bottom: 15px;">
+                Envie essências ou títulos diretamente para o inventário de um herói específico por seus feitos ou
+                reporte de bugs.
+            </p>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px;">
+                <!-- Campo: ID do Usuário -->
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="color: #fff; font-size: 11px; display: block; margin-bottom: 5px;">ID ou Nome Exibição
+                        do Jogador:</label>
+                    <input type="text" id="correio-player-id" placeholder="Ex: Lippe ou ID do Firebase"
+                        style="width: 100%; padding: 8px; background: #0f0b15; border: 1px solid #4a3b69; color: #fff; border-radius: 4px; box-sizing: border-box;">
+                </div>
+
+                <!-- Campo: Quantidade de Essências -->
+                <div style="width: 130px;">
+                    <label style="color: #fff; font-size: 11px; display: block; margin-bottom: 5px;">Essências
+                        (Opcional):</label>
+                    <input type="number" id="correio-essencias" value="0" min="0"
+                        style="width: 100%; padding: 8px; background: #0f0b15; border: 1px solid #4a3b69; color: #fff; border-radius: 4px; box-sizing: border-box;">
+                </div>
+            </div>
+
+            <!-- Campo: Título/Item Especial -->
+            <div style="margin-bottom: 12px;">
+                <label style="color: #fff; font-size: 11px; display: block; margin-bottom: 5px;">Título/Item Especial
+                    (Opcional):</label>
+                <input type="text" id="correio-titulo" placeholder="Ex: Caçador de Bugs"
+                    style="width: 100%; padding: 8px; background: #0f0b15; border: 1px solid #4a3b69; color: #fff; border-radius: 4px; box-sizing: border-box;">
+            </div>
+
+            <!-- Campo: Motivo do Envio -->
+            <div style="margin-bottom: 15px;">
+                <label style="color: #fff; font-size: 11px; display: block; margin-bottom: 5px;">Mensagem/Motivo
+                    (Aparecerá no Pop-up):</label>
+                <input type="text" id="correio-mensagem" placeholder="Ex: por reportar um bug crítico no Oráculo!"
+                    style="width: 100%; padding: 8px; background: #0f0b15; border: 1px solid #4a3b69; color: #fff; border-radius: 4px; box-sizing: border-box;">
+            </div>
+
+            <button class="btn-primario" onclick="enviarPacoteDirecionado(); fecharModal('modal-correio-admin')"
+                style="width: 100%; background: linear-gradient(135deg, #27ae60, #1e7e43); font-weight: bold; border: none; box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);">
+                🚀 Despachar Pacote de Recompensa
+            </button>
+        </div>
+    </div>
     <div id="modal-detetive-adm" class="modal-overlay hidden">
         <div class="modal-card">
             <div class="modal-header">
@@ -256,6 +456,16 @@
                     <div id="roleta-visual" class="roleta-3d" onclick="girarRoleta3D(1)">🔮</div>
                 </div>
 
+                <!-- 🔮 ROLETA / PAINEL MILLENNIUM RPG - Escondido por padrão -->
+                <div id="container-admin-roleta" style="display: none;">
+                    <!-- O código de tudo o que está dentro do círculo azul na imagem "roleta.jpg" fica aqui dentro -->
+                    <div class="card-roleta-conteudo">
+                        <h3>Millennium RPG</h3>
+                        <p>Saudações, Lippe!</p>
+                        <!-- Imagem da bola de cristal, botão girar, etc... -->
+                    </div>
+                </div>
+
                 <!-- ELEMENTO ADICIONADO: O trilho horizontal que o JS exige para a animação -->
                 <div id="roletas-wrapper"
                     style="display: none !important; width: 0; height: 0; overflow: hidden; position: absolute;"></div>
@@ -267,8 +477,21 @@
                     <div id="conteudo-resultados-lista"></div>
                 </div>
 
-                <button id="btn-girar" class="btn-primario" onclick="girarRoleta3D(1)"
-                    style="width: 200px; margin-top: 15px;">Girar (1 Essência)</button>
+                <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
+
+                    <!-- Botão Normal 1x -->
+                    <button id="btn-girar" class="btn-primario" onclick="girarRoleta3D(1)"
+                        style="width: 180px; margin-top: 0;">
+                        🔮 Girar 1x (1 Essência)
+                    </button>
+
+                    <!-- Botão Épico 10x -->
+                    <button id="btn-sortear-10" class="btn-primario" onclick="girarRoleta3D(10)"
+                        style="width: 180px; margin-top: 0; background: linear-gradient(135deg, #1a1525, #5a3b99); border: 1px solid #d4af37; box-shadow: 0 0 12px rgba(138, 43, 226, 0.6); font-weight: bold;">
+                        ⚡ Girar 10x (10 Essências)
+                    </button>
+
+                </div>
 
                 <div id="contador-tentativas" style="margin-top:15px; font-size:14px; color:#a982ed;"></div>
             </div>
@@ -298,6 +521,7 @@
         <div class="aba-adm-container">
             <button id="btn-aba-jogadores" class="aba-btn active" onclick="mudarAbaAdm('jogadores')">👥 Jogadores &
                 Mod</button>
+            <button id="btn-aba-forja" class="aba-btn" onclick="mudarAbaAdm('forja')">⚒️ Forja de Matrizes</button>
             <button id="btn-aba-missoes" class="aba-btn" onclick="mudarAbaAdm('missoes')">📜 Missões Semanais</button>
             <button id="btn-aba-raca" class="aba-btn" onclick="mudarAbaAdm('raca')">🧬 Raças & Classes</button>
             <button id="btn-aba-afinidades" class="aba-btn" onclick="mudarAbaAdm('afinidades')">✨ Afinidades &
@@ -322,7 +546,82 @@
                 </div>
             </div>
         </div>
+        <!-- Bloco de Perdão Divino -->
+        <div class="card-dash" style="margin-top: 15px;">
+            <h3 style="color:#5cb85c; margin-top:0;">✨ Conceder Perdão Divino (Unban)</h3>
+            <p style="font-size: 12px; color: #ccc; margin-bottom: 10px;">Remove o banimento de um jogador
+                instantaneamente.</p>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="input-perdao-nome" placeholder="Nome do identificador..."
+                    style="flex: 1; padding: 8px; background: #1a1525; color: white; border: 1px solid #4a3b69; border-radius: 4px;">
+                <button onclick="concederPerdaoDireto()"
+                    style="background:#5cb85c; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer; transition: 0.2s;">🕊️
+                    Perdoar</button>
+            </div>
+        </div>
 
+        <div id="conteudo-adm-forja" class="aba-adm-conteudo hidden" style="margin-top:15px;">
+            <h3>⚒️ Forja de Matrizes (Criação Dinâmica)</h3>
+
+            <div class="forja-form-container"
+                style="background: #110e1b; padding: 15px; border-radius: 8px; border: 1px solid #3b2d59;">
+
+                <label>O que você deseja forjar?</label>
+                <select id="forja-tipo-base" onchange="alternarCamposForja()"
+                    style="margin-bottom: 15px; width: 100%; padding: 8px; background: #1a1525; color: white; border: 1px solid #4a3b69;">
+                    <option value="raca">Raça</option>
+                    <option value="classe">Classe</option>
+                    <option value="afinidade">Afinidade</option>
+                </select>
+
+                <label>Nome da Matriz (Ex: Paladino, Elfo Negro):</label>
+                <input type="text" id="forja-nome" placeholder="Digite o nome..."
+                    style="width: 100%; margin-bottom: 15px; padding: 8px; background: #1a1525; color: white; border: 1px solid #4a3b69;">
+
+                <!-- Seção: Raças e Classes (Atributos) -->
+                <div id="forja-campos-atributos" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <div><label>FOR</label><input type="number" id="forja-for" value="0"
+                            style="width: 100%; padding: 5px;"></div>
+                    <div><label>VEL</label><input type="number" id="forja-vel" value="0"
+                            style="width: 100%; padding: 5px;"></div>
+                    <div><label>HAB</label><input type="number" id="forja-hab" value="0"
+                            style="width: 100%; padding: 5px;"></div>
+                    <div><label>RES</label><input type="number" id="forja-res" value="0"
+                            style="width: 100%; padding: 5px;"></div>
+                    <div><label>POD</label><input type="number" id="forja-pod" value="0"
+                            style="width: 100%; padding: 5px;"></div>
+                </div>
+
+                <!-- Seção: Afinidades (Categorias e Passivas) -->
+                <div id="forja-campos-afinidade" style="display: none; margin-bottom: 15px;">
+
+                    <label>Categoria da Afinidade (Escolha ou Digite uma Nova):</label>
+                    <!-- No seu HTML, garanta que o input esteja estruturado assim: -->
+                    <input type="text" id="forja-categoria-afinidade" list="lista-categorias-afinidade"
+                        placeholder="Digite uma nova ou selecione...">
+                    <datalist id="lista-categorias-afinidade">
+                        <option value="Elementais">
+                        <option value="Sub-Elementais">
+                        <option value="Espirituais">
+                        <option value="Celestiais">
+                        <option value="Cósmicas">
+                        <option value="Secrett">
+                    </datalist>
+
+                    <label>Bônus de Status (Ex: +2 POD, +1 VEL):</label>
+                    <input type="text" id="forja-bonus" placeholder="Ex: +1 FOR, +1 POD"
+                        style="width: 100%; margin-bottom: 10px; padding: 8px;">
+
+                    <label>Nome da Passiva & Efeito:</label>
+                    <textarea id="forja-passiva" placeholder="Ex: Espírito Ardente: Todo dano de fogo é x2."
+                        style="width: 100%; padding: 8px; height: 60px;"></textarea>
+                </div>
+
+                <button onclick="salvarMatrizOficial()"
+                    style="width: 100%; padding: 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">💾
+                    Gravar Nova Matriz no Banco</button>
+            </div>
+        </div>
         <div id="conteudo-adm-missoes" class="aba-adm-conteudo hidden" style="margin-top:15px;">
             <h3 style="color:#d4af37; font-size:14px; margin-bottom:5px;">Criar Missão Semanal</h3>
             <input type="text" id="nova-missao-titulo" placeholder="Título da Missão" style="margin-bottom:8px;">
@@ -363,6 +662,33 @@
             </div>
         </div>
 
+        <div id="conteudo-adm-afinidades" class="aba-adm-conteudo hidden">
+            <h3>⚙️ Gerenciar Afinidades e Taxas de Drop</h3>
+
+            <!-- O JavaScript vai injetar as taxas de drop aqui dentro -->
+            <div id="grid-taxas-admin" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;"></div>
+
+            <!-- O JavaScript vai injetar a lista de afinidades com os botões de Editar/Excluir aqui -->
+            <div id="lista-afinidades-existentes-adm" style="background: #110e1b; padding: 15px; border-radius: 8px;">
+            </div>
+        </div>
+
+        <div id="conteudo-adm-racas" class="aba-adm-conteudo hidden">
+            <h3>📋 Gerenciar Raças e Classes</h3>
+
+            <h4 style="color:#a982ed;">Raças Atuais</h4>
+            <table style="width: 100%; text-align: left; margin-bottom: 20px;">
+                <thead id="th-racas"></thead>
+                <tbody id="tb-racas"></tbody>
+            </table>
+
+            <h4 style="color:#a982ed;">Classes Atuais</h4>
+            <table style="width: 100%; text-align: left;">
+                <thead id="th-classes"></thead>
+                <tbody id="tb-classes"></tbody>
+            </table>
+        </div>
+
         <div id="conteudo-adm-servidor" class="aba-adm-conteudo hidden" style="margin-top:15px;">
             <h3 style="color:#d4af37; font-size:14px; margin-bottom:5px;">🎁 Presente Global</h3>
             <input type="number" id="gift-qtd" placeholder="Quantidade de Essências para TODOS"
@@ -401,7 +727,64 @@
     <audio id="musica-medieval" loop preload="auto">
         <source src="medieval/ambiente.mp3.mp3" type="audio/mpeg">
     </audio>
+
+    <!-- 🎁 POP-UP CINEMATOGRÁFICO DE PRESENTES DO MESTRE -->
+    <div id="modal-presente-mistico" class="modal-overlay hidden"
+        style="z-index: 99999; background: rgba(10, 5, 20, 0.9);">
+        <div
+            style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
+
+            <!-- Tela 1: O Presente 3D Flutuante e Brilhante -->
+            <div id="tela-presente-fechado" style="text-align: center; cursor: pointer; transition: transform 0.3s;"
+                onclick="revelarPresenteMistico()">
+                <!-- Ícone grande com animações de pulso, brilho (box-shadow) e flutuação -->
+                <div
+                    style="font-size: 130px; filter: drop-shadow(0 0 35px #ffd700); animation: flutuarPresente 3s ease-in-out infinite, pulsarPresente 1.5s infinite; user-select: none;">
+                    🎁
+                </div>
+                <h2
+                    style="color: #ffd700; text-transform: uppercase; letter-spacing: 2px; margin-top: 30px; font-size: 24px; text-shadow: 0 0 10px rgba(255,215,0,0.5);">
+                    Você recebeu um Presente do Mestre!
+                </h2>
+                <p style="color: #aaa; font-size: 14px;">Toque no presente místico para abrir...</p>
+            </div>
+
+            <!-- Tela 2: Detalhes e Recompensas (Começa oculta) -->
+            <div id="tela-presente-aberto"
+                style="display: none; max-width: 450px; background: #1a1525; border: 2px solid #ffd700; border-radius: 12px; padding: 30px; text-align: center; box-shadow: 0 0 40px rgba(255, 215, 0, 0.3);">
+                <div style="font-size: 60px; margin-bottom: 15px;">✨</div>
+                <h2 style="color: #ffd700; margin: 0 0 10px 0;">Recompensa Concedida!</h2>
+
+                <!-- Caixa de Texto com o Motivo -->
+                <p id="txt-presente-motivo"
+                    style="color: #eee; font-size: 15px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 6px; border-left: 4px solid #ffd700; font-style: italic; text-align: left; margin: 20px 0;">
+                    "Por ter ajudado a caçar bugs no Oráculo!"
+                </p>
+
+                <!-- Mostrador de Ganhos Físicos -->
+                <div
+                    style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-bottom: 25px; text-align: left;">
+                    <div id="ganho-essencias"
+                        style="color: #a982ed; font-size: 16px; font-weight: bold; margin-bottom: 5px;">🔮 +0 Essências
+                    </div>
+                    <div id="ganho-titulo" style="color: #27ae60; font-size: 16px; font-weight: bold; display: none;">👑
+                        Novo Título: [Nome]</div>
+                    <small style="color: #777; display: block; margin-top: 8px; font-size: 11px;">⚠️ Os valores já foram
+                        depositados diretamente na sua carteira.</small>
+                </div>
+
+                <button onclick="fecharPresenteMistico()"
+                    style="background: linear-gradient(135deg, #ffd700, #b8860b); color: #000; font-weight: bold; border: none; padding: 12px 30px; font-size: 14px; border-radius: 6px; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(212,175,55,0.4);">
+                    Coletar e Retornar à Taverna
+                </button>
+            </div>
+
+        </div>
+    </div>
+
     <script src="js/main.js"></script>
+
+
 
 </body>
 

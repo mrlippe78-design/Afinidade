@@ -289,7 +289,8 @@ body::before {
     line-height: 1.4;
     word-break: break-word;
     background: rgba(255, 255, 255, 0.02);
-    padding: 4px 6px;
+    /* Aumentei o padding à direita para 25px, garantindo que o texto não passe por cima da bandeira */
+    padding: 4px 25px 4px 6px; 
     border-radius: 4px;
     position: relative;
 }
@@ -304,13 +305,21 @@ body::before {
 }
 
 .btn-report-msg {
-    float: right;
+    position: absolute; /* Substitui o float: right */
+    right: 4px; /* Fixa no canto direito */
+    top: 4px; /* Fixa no topo da mensagem */
     background: none;
     border: none;
     color: #d9534f;
     cursor: pointer;
-    font-size: 10px;
+    font-size: 11px; /* Aumentei levemente para o emoji ficar mais visível */
     padding: 0 2px;
+    opacity: 0.5; /* Deixa a bandeira levemente transparente para não poluir o chat */
+    transition: opacity 0.2s;
+}
+
+.btn-report-msg:hover {
+    opacity: 1; /* Fica totalmente visível ao passar o mouse */
 }
 
 .chat-input-row {
@@ -1107,4 +1116,13 @@ body.alto-contraste .painel-lateral {
 
     #btn-voltar-lista { display: inline-block; margin-right: 10px; font-size: 14px; }
     .desktop-only { display: none; }
+}
+@keyframes flutuarPresente {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(3deg); }
+}
+@keyframes pulsarPresente {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 45px #ffd700); }
+    100% { transform: scale(1); }
 }
